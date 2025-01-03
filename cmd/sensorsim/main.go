@@ -7,7 +7,7 @@ import (
 
 	"github.com/kajtekajtek/insight-naturae/internal/sensors"
 	"github.com/kajtekajtek/insight-naturae/pkg/mqtt"
-	"github.com/kajtekajtek/insight-naturae/pkg/utils"
+	"github.com/kajtekajtek/insight-naturae/internal/mqttutils"
 )
 
 func main() {
@@ -21,25 +21,24 @@ func main() {
 	var interval int = 5
 
 	// get the topic and broker address from environment variables
-	scheme := utils.Getenv("MQTT_SCHEME", "tcp")
-	host := utils.Getenv("MQTT_HOST", "localhost")
-	port := utils.Getenv("MQTT_PORT", "1883")
-	topic := utils.Getenv("MQTT_TOPIC", "insight-naturae/sensors")
+	conf := mqttutils.LoadConnOpts()
 
 	// initialize the mqtt client and connect to the broker
-	client, err := mqtt.InitClient(scheme, host, port)
+	client, err := mqtt.InitClient(conf.Scheme, conf.Host, conf.Port)
 	if err != nil {
 		log.Fatalf("Error initializing MQTT client: %v", err)
 	}
 
-	fmt.Println("Connected to MQTT broker on " + host)
-	fmt.Println("Publishing to topic " + topic)
+	fmt.Println("Connected to MQTT broker on " + conf.Host)
+	for _, t := range conf.Topics {
+		fmt.Println("Publishing on topic: " + t)
+	}
 
 	// simulate sensors
-	go sensors.SimulateSensor(client, topic, u_temp, min_temp, max_temp, interval)
-	go sensors.SimulateSensor(client, topic, u_hum, min_hum, max_hum, interval)
-	go sensors.SimulateSensor(client, topic, u_pres, min_pres, max_pres, interval)
-	go sensors.SimulateSensor(client, topic, u_co2, min_co2, max_co2, interval)
+	go sensors.SimulateSensor(client, conf.Topics, u_temp, min_temp, max_temp, interval)
+	go sensors.SimulateSensor(client, conf.Topics, u_hum, min_hum, max_hum, interval)
+	go sensors.SimulateSensor(client, conf.Topics, u_pres, min_pres, max_pres, interval)
+	go sensors.SimulateSensor(client, conf.Topics, u_co2, min_co2, max_co2, interval)
 
 	// wait forever
 	for {}
