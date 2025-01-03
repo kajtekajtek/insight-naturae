@@ -1,4 +1,4 @@
-// internal/mqttutils/mqttutils.go - package for handling MQTT communication
+// internal/mqttutils/mqttutils.go - project specific methods for handling MQTT communication
 package mqttutils
 
 import (
@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+/* loads the MQTT connection options from the environment 
+	variables and returns them as a MqttConn struct */
 func LoadConnOpts() models.MqttConn {
 	var c models.MqttConn
 	c.Scheme = utils.Getenv("MQTT_SCHEME", "tcp")
@@ -18,4 +20,8 @@ func LoadConnOpts() models.MqttConn {
 	c.Topics = strings.Split(topics, ":")
 
 	return c
+}
+
+func MessageHandler(client mqtt.Client, msg mqtt.Message) {
+	fmt.Printf("%s: %s\n", msg.Topic(), msg.Payload())
 }
