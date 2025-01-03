@@ -1,5 +1,5 @@
-// pkg/database/Database.go - database operations
-package database
+// pkg/database/dbutils.go - generic database operations
+package dbutils
 
 import (
 	"database/sql"
@@ -9,16 +9,11 @@ import (
 )
 
 // Init initializes the database
-func Init(dbPath, schema string) (*sql.DB, error) {
+func Init(dbPath string) (*sql.DB, error) {
 	// open or create the database file
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %v", err)
-	}
-
-	// create the table
-	if _, err := db.Exec(schema); err != nil {
-		return nil, fmt.Errorf("failed to create table: %v", err)
 	}
 
 	fmt.Println("Database initialized")
