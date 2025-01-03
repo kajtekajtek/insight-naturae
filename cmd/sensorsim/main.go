@@ -2,18 +2,15 @@
 package main
 
 import (
-	"encoding/base64"
 	"fmt"
-	"github.com/kajtekajtek/insight-naturae/pkg/utils"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"log"
+
 	"github.com/kajtekajtek/insight-naturae/internal/sensors"
-	"github.com/google/uuid" // uuid
+	"github.com/kajtekajtek/insight-naturae/pkg/mqtt"
+	"github.com/kajtekajtek/insight-naturae/pkg/utils"
 )
 
 func main() {
-	// default mqtt broker options
-	var defaultURL string = "localhost:1883"
-	var defaultTopic string = "insight-naturae/sensors"
 	// define the value ranges for the simulated sensors
 	var min_temp, max_temp float64 = 10, 30
 	var min_hum,  max_hum float64 = 0, 100
@@ -23,24 +20,20 @@ func main() {
 	// interval between sensor readings in seconds
 	var interval int = 5
 
-	// get the topic and URL from environment variables
-	topic := utils.Getenv("MQTT_TOPIC", defaultTopic)
-	url := utils.Getenv("MQTT_URL", defaultURL)
+	// get the topic and broker address from environment variables
+	scheme := utils.Getenv("MQTT_SCHEME", "tcp")
+	host := utils.Getenv("MQTT_HOST", "localhost")
+	port := utils.Getenv("MQTT_PORT", "1883")
+	topic := utils.Getenv("MQTT_TOPIC", "insight-naturae/sensors")
 
-	// generate an uuid, encode it to base64 and set it as the client ID
-	id := uuid.New()
-	clientID := base64.RawURLEncoding.EncodeToString(id[:])
-
-	// connect to the MQTT broker
-	opts := mqtt.NewClientOptions().AddBroker("tcp://" + url).SetClientID(clientID)
-	client := mqtt.NewClient(opts)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
+	// initialize the mqtt client and connect to the broker
+	client, err := mqtt.InitClient(scheme, host, port)
+	if err != nil {
+		log.Fatalf("Error initializing MQTT client: %v", err)
 	}
 
-	fmt.Println("Connected to MQTT broker on " + url)
+	fmt.Println("Connected to MQTT broker on " + host)
 	fmt.Println("Publishing to topic " + topic)
-	fmt.Println("Client ID: " + opts.ClientID)
 
 	// simulate sensors
 	go sensors.SimulateSensor(client, topic, u_temp, min_temp, max_temp, interval)
