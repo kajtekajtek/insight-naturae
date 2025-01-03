@@ -1,5 +1,5 @@
-// internal/database/database.go - project specific database operations
-package database
+// internal/database/dbutils.go - project specific database operations
+package dbutils
 
 import  (
 	"database/sql"

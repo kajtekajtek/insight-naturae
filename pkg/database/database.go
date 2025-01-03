@@ -1,5 +1,5 @@
-// pkg/database/dbutils.go - generic database operations
-package dbutils
+// pkg/database/database.go - generic database operations
+package database
 
 import (
 	"database/sql"
