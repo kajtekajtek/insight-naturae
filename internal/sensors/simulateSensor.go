@@ -19,7 +19,7 @@ func SimulateSensor(client mqtt.Client, topic, unit string, min, max float64, in
 		// generate random sensor data
 		val := utils.GenerateData(min, max)
 		// create a message
-		msg := models.SensorMessage{
+		msg := models.SensorData{
 			SensorID:  id,
 			Timestamp: time.Now().UTC().Format(time.RFC3339),
 			Value:     val,

@@ -1,3 +1,4 @@
+// pkg/utils/GenerateData.go - float number generating utility
 package utils
 
 import (
