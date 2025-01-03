@@ -4,7 +4,7 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
-	"os"
+	"github.com/kajtekajtek/insight-naturae/pkg/utils"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/kajtekajtek/insight-naturae/internal/sensors"
 	"github.com/google/uuid" // uuid
@@ -24,15 +24,8 @@ func main() {
 	var interval int = 5
 
 	// get the topic and URL from environment variables
-	topic := os.Getenv("MQTT_TOPIC")
-	if topic == "" {
-		topic = defaultTopic
-	}	
-
-	url := os.Getenv("MQTT_URL")
-	if url == "" {
-		url = defaultURL
-	}
+	topic := utils.Getenv("MQTT_TOPIC", defaultTopic)
+	url := utils.Getenv("MQTT_URL", defaultURL)
 
 	// generate an uuid, encode it to base64 and set it as the client ID
 	id := uuid.New()
