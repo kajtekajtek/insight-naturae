@@ -36,7 +36,6 @@ func SimulateSensor(client mqtt.Client, topic, unit string, min, max float64, in
 		// publish the message
 		token := client.Publish(topic, 0, false, payload)
 		token.Wait()
-		fmt.Println("Published message:", string(payload))
 
 		// wait
 		time.Sleep(time.Duration(interval) * time.Second)

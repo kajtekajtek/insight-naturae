@@ -11,25 +11,27 @@ import (
 )
 
 func main() {
+	// default mqtt broker options
+	var defaultURL string = "localhost:1883"
+	var defaultTopic string = "insight-naturae/sensors"
 	// define the value ranges for the simulated sensors
 	var min_temp, max_temp float64 = 10, 30
 	var min_hum,  max_hum float64 = 0, 100
 	var min_pres, max_pres float64 = 800, 1000
 	var min_co2,  max_co2 float64  = 320, 520
 	var u_temp, u_hum, u_pres, u_co2 string = "C", "%RH", "hPa", "PPM"
-	
 	// interval between sensor readings in seconds
-	interval := 5
+	var interval int = 5
 
 	// get the topic and URL from environment variables
 	topic := os.Getenv("MQTT_TOPIC")
 	if topic == "" {
-		topic = "insight-naturae/sensors"
+		topic = defaultTopic
 	}	
 
 	url := os.Getenv("MQTT_URL")
 	if url == "" {
-		url = "localhost:1883"
+		url = defaultURL
 	}
 
 	// generate an uuid, encode it to base64 and set it as the client ID
