@@ -3,11 +3,15 @@ package mqttutils
 
 import (
 	"fmt"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/kajtekajtek/insight-naturae/pkg/utils"
-	"github.com/kajtekajtek/insight-naturae/pkg/models"
+	"encoding/json"
+	"database/sql"
 	"strings"
 
+	"github.com/kajtekajtek/insight-naturae/pkg/utils"
+	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
+	"github.com/kajtekajtek/insight-naturae/pkg/models"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/joho/godotenv"
 )
 
@@ -17,9 +21,9 @@ func LoadConnOpts() models.MqttConn {
 	var c models.MqttConn
 
 	// load the environment variables from the .env file
-	err := godotenv.Load()
+	err := godotenv.Load(".env")
 	if err != nil {
-		fmt.Errorf("Error loading .env file")
+		fmt.Println("Failed to load .env file; continuing with the default values...")
 	}
 
 	c.Scheme = utils.Getenv("MQTT_SCHEME", "tcp")
@@ -31,6 +35,21 @@ func LoadConnOpts() models.MqttConn {
 	return c
 }
 
-func MessageHandler(client mqtt.Client, msg mqtt.Message) {
-	fmt.Printf("%s: %s\n", msg.Topic(), msg.Payload())
+/* function MessageHandler is a closure that returns a function 
+	which inserts the received sensor data into the database */
+func MessageHandler(db *sql.DB) mqtt.MessageHandler {
+	return func(client mqtt.Client, msg mqtt.Message) {
+		// parse the message payload into a SensorData struct
+		data := models.SensorData{}
+		if err := json.Unmarshal(msg.Payload(), &data); err != nil {
+			fmt.Println("Error unmarshalling message:", err)
+			return
+		}
+
+		// insert the data into the database
+		if err := dbutils.InsertSensorData(db, data); err != nil {
+			fmt.Println("Failed to insert sensor data into the database:", err)
+			return
+		}
+	}
 }

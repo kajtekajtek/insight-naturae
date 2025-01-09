@@ -4,13 +4,15 @@ package dbutils
 import  (
 	"database/sql"
 	"fmt"
+
 	"github.com/kajtekajtek/insight-naturae/pkg/models"
 	"github.com/kajtekajtek/insight-naturae/pkg/utils"
 	"github.com/kajtekajtek/insight-naturae/pkg/database"
+
 	"github.com/joho/godotenv"
 )
 
-func CreateDatabase() error {
+func CreateDatabase() (*sql.DB, error) {
 	// load the environment variables from the .env file
 	err := godotenv.Load()
 	if err != nil {
@@ -21,15 +23,15 @@ func CreateDatabase() error {
 	dbPath := utils.Getenv("DB_FILE", "./insight-naturae.db")
 	db, err := database.Init(dbPath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// create the sensor table
 	if err := CreateSensorTable(db); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return db, nil
 }
 
 // create table for sensor data
