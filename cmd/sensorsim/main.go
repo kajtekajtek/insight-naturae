@@ -2,18 +2,15 @@
 package main
 
 import (
-	"encoding/base64"
 	"fmt"
-	"os"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"log"
+
 	"github.com/kajtekajtek/insight-naturae/internal/sensors"
-	"github.com/google/uuid" // uuid
+	"github.com/kajtekajtek/insight-naturae/pkg/mqtt"
+	"github.com/kajtekajtek/insight-naturae/internal/mqttutils"
 )
 
 func main() {
-	// default mqtt broker options
-	var defaultURL string = "localhost:1883"
-	var defaultTopic string = "insight-naturae/sensors"
 	// define the value ranges for the simulated sensors
 	var min_temp, max_temp float64 = 10, 30
 	var min_hum,  max_hum float64 = 0, 100
@@ -23,37 +20,25 @@ func main() {
 	// interval between sensor readings in seconds
 	var interval int = 5
 
-	// get the topic and URL from environment variables
-	topic := os.Getenv("MQTT_TOPIC")
-	if topic == "" {
-		topic = defaultTopic
-	}	
+	// get the topic and broker address from environment variables
+	conf := mqttutils.LoadConnOpts()
 
-	url := os.Getenv("MQTT_URL")
-	if url == "" {
-		url = defaultURL
+	// initialize the mqtt client and connect to the broker
+	client, err := mqtt.InitClient(conf.Scheme, conf.Host, conf.Port)
+	if err != nil {
+		log.Fatalf("Error initializing MQTT client: %v", err)
 	}
 
-	// generate an uuid, encode it to base64 and set it as the client ID
-	id := uuid.New()
-	clientID := base64.RawURLEncoding.EncodeToString(id[:])
-
-	// connect to the MQTT broker
-	opts := mqtt.NewClientOptions().AddBroker("tcp://" + url).SetClientID(clientID)
-	client := mqtt.NewClient(opts)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
+	fmt.Println("Connected to MQTT broker on " + conf.Host)
+	for _, t := range conf.Topics {
+		fmt.Println("Publishing on topic: " + t)
 	}
-
-	fmt.Println("Connected to MQTT broker on " + url)
-	fmt.Println("Publishing to topic " + topic)
-	fmt.Println("Client ID: " + opts.ClientID)
 
 	// simulate sensors
-	go sensors.SimulateSensor(client, topic, u_temp, min_temp, max_temp, interval)
-	go sensors.SimulateSensor(client, topic, u_hum, min_hum, max_hum, interval)
-	go sensors.SimulateSensor(client, topic, u_pres, min_pres, max_pres, interval)
-	go sensors.SimulateSensor(client, topic, u_co2, min_co2, max_co2, interval)
+	go sensors.SimulateSensor(client, conf.Topics, u_temp, min_temp, max_temp, interval)
+	go sensors.SimulateSensor(client, conf.Topics, u_hum, min_hum, max_hum, interval)
+	go sensors.SimulateSensor(client, conf.Topics, u_pres, min_pres, max_pres, interval)
+	go sensors.SimulateSensor(client, conf.Topics, u_co2, min_co2, max_co2, interval)
 
 	// wait forever
 	for {}

@@ -12,7 +12,7 @@ import (
 )
 
 // SimulateSensor simulates a sensor that sends data to a MQTT broker
-func SimulateSensor(client mqtt.Client, topic, unit string, min, max float64, interval int) {
+func SimulateSensor(client mqtt.Client, topics []string, unit string, min, max float64, interval int) {
 	// generate a random sensor ID
 	id := uuid.New().String()
 	for {
@@ -34,8 +34,10 @@ func SimulateSensor(client mqtt.Client, topic, unit string, min, max float64, in
 		}
 
 		// publish the message
-		token := client.Publish(topic, 0, false, payload)
-		token.Wait()
+		for _, t := range topics {
+			token := client.Publish(t, 0, false, payload)
+			token.Wait()
+		}
 
 		// wait
 		time.Sleep(time.Duration(interval) * time.Second)

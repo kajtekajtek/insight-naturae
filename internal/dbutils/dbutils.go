@@ -1,11 +1,38 @@
-// internal/database/database.go - project specific database operations
-package database
+// internal/database/dbutils.go - project specific database operations
+package dbutils
 
 import  (
 	"database/sql"
 	"fmt"
+
 	"github.com/kajtekajtek/insight-naturae/pkg/models"
+	"github.com/kajtekajtek/insight-naturae/pkg/utils"
+	"github.com/kajtekajtek/insight-naturae/pkg/database"
+
+	"github.com/joho/godotenv"
 )
+
+func CreateDatabase() (*sql.DB, error) {
+	// load the environment variables from the .env file
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("Failed to load .env file; continuing with the default values...")
+	}
+
+	// initialize the database
+	dbPath := utils.Getenv("DB_FILE", "./insight-naturae.db")
+	db, err := database.Init(dbPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// create the sensor table
+	if err := CreateSensorTable(db); err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
 
 // create table for sensor data
 func CreateSensorTable(db *sql.DB) error {
