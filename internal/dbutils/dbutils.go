@@ -5,7 +5,32 @@ import  (
 	"database/sql"
 	"fmt"
 	"github.com/kajtekajtek/insight-naturae/pkg/models"
+	"github.com/kajtekajtek/insight-naturae/pkg/utils"
+	"github.com/kajtekajtek/insight-naturae/pkg/database"
+	"github.com/joho/godotenv"
 )
+
+func CreateDatabase() error {
+	// load the environment variables from the .env file
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("Failed to load .env file; continuing with the default values...")
+	}
+
+	// initialize the database
+	dbPath := utils.Getenv("DB_FILE", "./insight-naturae.db")
+	db, err := database.Init(dbPath)
+	if err != nil {
+		return err
+	}
+
+	// create the sensor table
+	if err := CreateSensorTable(db); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // create table for sensor data
 func CreateSensorTable(db *sql.DB) error {

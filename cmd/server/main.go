@@ -3,23 +3,13 @@ package main
 import (
 	"log"
 	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
-	"github.com/kajtekajtek/insight-naturae/pkg/database"
 	"github.com/kajtekajtek/insight-naturae/pkg/mqtt"
 	"github.com/kajtekajtek/insight-naturae/internal/mqttutils"
 )
 
 func main() {
-	// initialize the database
-	dbPath := "./insight-naturae.db"
-	db, err := database.Init(dbPath)
-	if err != nil {
-		log.Fatalf("Error initializing database: %v", err)
-	}
-	defer db.Close()
-
-	// create the sensor table
-	if err := dbutils.CreateSensorTable(db); err != nil {
-		log.Fatalf("Error creating sensor table: %v", err)
+	if err := dbutils.CreateDatabase(); err != nil {
+		log.Fatalf("Error creating database: %v", err)
 	}
 
 	// load MQTT connection options

@@ -19,7 +19,7 @@ func LoadConnOpts() models.MqttConn {
 	// load the environment variables from the .env file
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Println("Error loading .env file")
+		fmt.Errorf("Error loading .env file")
 	}
 
 	c.Scheme = utils.Getenv("MQTT_SCHEME", "tcp")
