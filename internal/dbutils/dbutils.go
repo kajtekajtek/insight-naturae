@@ -10,6 +10,7 @@ import  (
 	"github.com/kajtekajtek/insight-naturae/pkg/database"
 
 	"github.com/joho/godotenv"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func CreateDatabase() (*sql.DB, error) {
@@ -34,7 +35,8 @@ func CreateDatabase() (*sql.DB, error) {
 	return db, nil
 }
 
-// create table for sensor data
+// --- CREATE tables --- 
+
 func CreateSensorTable(db *sql.DB) error {
 	sensorTableSQL := `
 		CREATE TABLE IF NOT EXISTS SensorData (
@@ -53,7 +55,24 @@ func CreateSensorTable(db *sql.DB) error {
 	return nil
 }
 
-// insert sensor data into the database
+func CreateUserTable(db *sql.DB) error {
+	userTableSQL := `
+		CREATE TABLE IF NOT EXISTS Users (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			username TEXT NOT NULL UNIQUE,
+			password TEXT NOT NULL
+		);`
+
+	_, err := db.Exec(userTableSQL)
+	if err != nil {
+		return fmt.Errorf("failed to create user table: %v", err)
+	}
+
+	return nil;
+}
+
+// --- INSERT data ---
+
 func InsertSensorData(db *sql.DB, data models.SensorData) error {
 	insertSQL := `
 		INSERT INTO SensorData (sensor_id, timestamp, value, unit)
@@ -67,7 +86,27 @@ func InsertSensorData(db *sql.DB, data models.SensorData) error {
 	return nil
 }
 
-// dump sensor data from the database
+func InsertUserData(db *sql.DB, user models.User) error {
+	hashedPsswrd, err := bcrypt.GenerateFromPassword([]byte(user.Password),
+		bcrypt.DefaultCost)	
+	if err != nil {
+		return fmt.Errorf("failed to insert user data: %v", err)
+	}
+
+	insertSQL := `
+		INSERT INTO Users (username, password)
+		VALUES (?, ?);`
+
+	_, err := db.Exec(insertSQL, user.Username, string(hashedPsswrd))
+	if err != nil {
+		return fmt.Errorf("failed to insert user data: %v", err)
+	}
+
+	return nil
+}
+
+// --- SELECT data ---
+
 func DumpSensorData(db *sql.DB) ([]models.SensorData, error) {
 	querySQL := `
 		SELECT sensor_id, timestamp, value, unit FROM SensorData;`
@@ -91,4 +130,24 @@ func DumpSensorData(db *sql.DB) ([]models.SensorData, error) {
 	}
 
 	return data, nil
+}
+
+func GetUserByUsername(db *sql.DB, username string) (models.User, error) {
+	querySQL = `
+		SELECT username, password FROM Users WHERE username = ?;`
+	
+	row, err := db.QueryRow(querySQL, username)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user data: %v", err)
+	}
+	defer row.Close()
+
+	var user models.User
+	// copy each column into a field in the struct
+	err := row.Scan(&user.Username, &user.Password)
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan user data: %v", err)
+	}
+
+	return user, nil
 }
