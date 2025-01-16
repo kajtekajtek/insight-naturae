@@ -7,7 +7,7 @@ import (
 
 	"github.com/kajtekajtek/insight-naturae/internal/sensors"
 	"github.com/kajtekajtek/insight-naturae/pkg/mqtt"
-	"github.com/kajtekajtek/insight-naturae/internal/mqttutils"
+	"github.com/kajtekajtek/insight-naturae/internal/config"
 )
 
 func main() {
@@ -20,16 +20,19 @@ func main() {
 	// interval between sensor readings in seconds
 	var interval int = 5
 
-	// get the topic and broker address from environment variables
-	conf := mqttutils.LoadConnOpts()
-
-	// initialize the mqtt client and connect to the broker
-	client, err := mqtt.InitClient(conf.Scheme, conf.Host, conf.Port)
+	// load the configuratioon
+	conf, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("Error initializing MQTT client: %v", err)
+		log.Fatal("Failed while loading the configuration: %v", err)
 	}
 
-	fmt.Println("Connected to MQTT broker on " + conf.Host)
+	// initialize the mqtt client and connect to the broker
+	client, err := mqtt.InitClient(conf.MQTTScheme, conf.MQTTHost, conf.MQTTPort)
+	if err != nil {
+		log.Fatalf("Failed while initializing MQTT client: %v", err)
+	}
+
+	fmt.Println("Connected to MQTT broker on " + conf.MQTTScheme)
 	for _, t := range conf.Topics {
 		fmt.Println("Publishing on topic: " + t)
 	}

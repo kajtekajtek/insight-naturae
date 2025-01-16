@@ -6,22 +6,13 @@ import  (
 	"fmt"
 
 	"github.com/kajtekajtek/insight-naturae/pkg/models"
-	"github.com/kajtekajtek/insight-naturae/pkg/utils"
 	"github.com/kajtekajtek/insight-naturae/pkg/database"
 
-	"github.com/joho/godotenv"
+	"golang.org/x/crypto/bcrypt"
 )
 
-func CreateDatabase() (*sql.DB, error) {
-	// load the environment variables from the .env file
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("Failed to load .env file; continuing with the default values...")
-	}
-
-	// initialize the database
-	dbPath := utils.Getenv("DB_FILE", "./insight-naturae.db")
-	db, err := database.Init(dbPath)
+func CreateDatabase(DBPath string) (*sql.DB, error) {
+	db, err := database.Init(DBPath)
 	if err != nil {
 		return nil, err
 	}
@@ -31,10 +22,16 @@ func CreateDatabase() (*sql.DB, error) {
 		return nil, err
 	}
 
+	// create the user table
+	if err := CreateUserTable(db); err != nil {
+		return nil, err
+	}
+
 	return db, nil
 }
 
-// create table for sensor data
+// --- CREATE tables --- 
+
 func CreateSensorTable(db *sql.DB) error {
 	sensorTableSQL := `
 		CREATE TABLE IF NOT EXISTS SensorData (
@@ -53,7 +50,24 @@ func CreateSensorTable(db *sql.DB) error {
 	return nil
 }
 
-// insert sensor data into the database
+func CreateUserTable(db *sql.DB) error {
+	userTableSQL := `
+		CREATE TABLE IF NOT EXISTS Users (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			username TEXT NOT NULL UNIQUE,
+			password TEXT NOT NULL
+		);`
+
+	_, err := db.Exec(userTableSQL)
+	if err != nil {
+		return fmt.Errorf("failed to create user table: %v", err)
+	}
+
+	return nil;
+}
+
+// --- INSERT data ---
+
 func InsertSensorData(db *sql.DB, data models.SensorData) error {
 	insertSQL := `
 		INSERT INTO SensorData (sensor_id, timestamp, value, unit)
@@ -67,7 +81,27 @@ func InsertSensorData(db *sql.DB, data models.SensorData) error {
 	return nil
 }
 
-// dump sensor data from the database
+func InsertUserData(db *sql.DB, user models.User) error {
+	hashedPsswrd, err := bcrypt.GenerateFromPassword([]byte(user.Password),
+		bcrypt.DefaultCost)	
+	if err != nil {
+		return fmt.Errorf("failed to insert user data: %v", err)
+	}
+
+	insertSQL := `
+		INSERT INTO Users (username, password)
+		VALUES (?, ?);`
+
+	_, err = db.Exec(insertSQL, user.Username, string(hashedPsswrd))
+	if err != nil {
+		return fmt.Errorf("failed to insert user data: %v", err)
+	}
+
+	return nil
+}
+
+// --- SELECT data ---
+
 func DumpSensorData(db *sql.DB) ([]models.SensorData, error) {
 	querySQL := `
 		SELECT sensor_id, timestamp, value, unit FROM SensorData;`
@@ -91,4 +125,20 @@ func DumpSensorData(db *sql.DB) ([]models.SensorData, error) {
 	}
 
 	return data, nil
+}
+
+func GetUserByUsername(db *sql.DB, username string) (models.User, error) {
+	querySQL := `
+		SELECT username, password FROM Users WHERE username = ?;`
+	
+	row := db.QueryRow(querySQL, username)
+
+	var user models.User
+	// copy each column into a field in the struct
+	err := row.Scan(&user.Username, &user.Password)
+	if err != nil {
+		return models.User{}, fmt.Errorf("failed to scan user data: %v", err)
+	}
+
+	return user, nil
 }

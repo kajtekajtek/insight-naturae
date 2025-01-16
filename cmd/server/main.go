@@ -5,23 +5,31 @@ import (
 	"log"
 
 	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
-	"github.com/kajtekajtek/insight-naturae/pkg/mqtt"
 	"github.com/kajtekajtek/insight-naturae/internal/mqttutils"
+	"github.com/kajtekajtek/insight-naturae/internal/api"	
+	"github.com/kajtekajtek/insight-naturae/internal/config"
+	"github.com/kajtekajtek/insight-naturae/pkg/mqtt"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	db, err := dbutils.CreateDatabase()
+	// load the configuration
+	conf, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("Error creating database: %v", err)
+		log.Fatal("Failed while loading the configuration: %v", err)
 	}
 
-	// load MQTT connection options
-	conf := mqttutils.LoadConnOpts()
+	// create the database
+	db, err := dbutils.CreateDatabase(conf.DBPath)
+	if err != nil {
+		log.Fatalf("Failed while creating database: %v", err)
+	}
 
 	// initialize the MQTT client
-	mqttClient, err := mqtt.InitClient(conf.Scheme, conf.Host, conf.Port)
+	mqttClient, err := mqtt.InitClient(conf.MQTTScheme, conf.MQTTHost, conf.MQTTPort)
 	if err != nil {
-		log.Fatalf("Error initializing MQTT client: %v", err)
+		log.Fatalf("Failed while initializing MQTT client: %v", err)
 	}
 
 	// subscribe to the topics
@@ -29,10 +37,14 @@ func main() {
 	for _, t := range conf.Topics {
 		log.Printf("Subscribing to topic: %s\n", t)
 		if token := mqttClient.Subscribe(t, 0, messageHandler); token.Wait() && token.Error() != nil {
-			log.Fatalf("Error subscribing to topic: %v", token.Error())
+			log.Fatalf("Failed while subscribing to topic: %v", token.Error())
 		}
 	}
 
-	// wait forever
-	for {}
+	// run the API server
+	router := gin.Default()
+	router.POST("/register", api.RegisterHandler(db))
+	router.POST("/login", api.LoginHandler(db, conf.JWTSecret))
+
+	router.Run(":8080")
 }

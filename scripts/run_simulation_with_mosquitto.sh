@@ -2,6 +2,17 @@
 # with the sensor simulator and mosquitto mqtt broker
 #!/bin/sh
 
+cleanup() {
+    pkill mosquitto
+
+    pkill -f "go run ./cmd/sensorsim/main.go"
+
+    pkill -f "go run ./cmd/server/main.go"
+}
+
+# Przypisanie funkcji cleanup do sygnałów zakończenia skryptu
+trap cleanup EXIT
+
 # start the mosquitto mqtt broker
 mosquitto &
 sleep 1
