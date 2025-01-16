@@ -6,29 +6,24 @@ import  (
 	"fmt"
 
 	"github.com/kajtekajtek/insight-naturae/pkg/models"
-	"github.com/kajtekajtek/insight-naturae/pkg/utils"
 	"github.com/kajtekajtek/insight-naturae/pkg/database"
 
-	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func CreateDatabase() (*sql.DB, error) {
-	// load the environment variables from the .env file
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("Failed to load .env file; continuing with the default values...")
-	}
-
-	// initialize the database
-	dbPath := utils.Getenv("DB_FILE", "./insight-naturae.db")
-	db, err := database.Init(dbPath)
+func CreateDatabase(DBPath string) (*sql.DB, error) {
+	db, err := database.Init(DBPath)
 	if err != nil {
 		return nil, err
 	}
 
 	// create the sensor table
 	if err := CreateSensorTable(db); err != nil {
+		return nil, err
+	}
+
+	// create the user table
+	if err := CreateUserTable(db); err != nil {
 		return nil, err
 	}
 
@@ -97,7 +92,7 @@ func InsertUserData(db *sql.DB, user models.User) error {
 		INSERT INTO Users (username, password)
 		VALUES (?, ?);`
 
-	_, err := db.Exec(insertSQL, user.Username, string(hashedPsswrd))
+	_, err = db.Exec(insertSQL, user.Username, string(hashedPsswrd))
 	if err != nil {
 		return fmt.Errorf("failed to insert user data: %v", err)
 	}
@@ -133,20 +128,16 @@ func DumpSensorData(db *sql.DB) ([]models.SensorData, error) {
 }
 
 func GetUserByUsername(db *sql.DB, username string) (models.User, error) {
-	querySQL = `
+	querySQL := `
 		SELECT username, password FROM Users WHERE username = ?;`
 	
-	row, err := db.QueryRow(querySQL, username)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query user data: %v", err)
-	}
-	defer row.Close()
+	row := db.QueryRow(querySQL, username)
 
 	var user models.User
 	// copy each column into a field in the struct
 	err := row.Scan(&user.Username, &user.Password)
 	if err != nil {
-		return nil, fmt.Errorf("failed to scan user data: %v", err)
+		return models.User{}, fmt.Errorf("failed to scan user data: %v", err)
 	}
 
 	return user, nil

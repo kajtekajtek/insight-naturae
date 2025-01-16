@@ -29,7 +29,7 @@ func SimulateSensor(client mqtt.Client, topics []string, unit string, min, max f
 		// marshal the message
 		payload, err := json.Marshal(msg)
 		if err != nil {
-			fmt.Println("Error marshalling message:", err)
+			fmt.Println("Failed while marshalling message:", err)
 			return
 		}
 
