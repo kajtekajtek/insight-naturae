@@ -17,7 +17,7 @@ func main() {
 	// load the configuration
 	conf, err := config.LoadConfig()
 	if err != nil {
-		log.Fatal("Failed while loading the configuration: %v", err)
+		log.Fatalf("Failed while loading the configuration: %v", err)
 	}
 
 	// create the database

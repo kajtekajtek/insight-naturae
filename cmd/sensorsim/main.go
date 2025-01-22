@@ -23,7 +23,7 @@ func main() {
 	// load the configuratioon
 	conf, err := config.LoadConfig()
 	if err != nil {
-		log.Fatal("Failed while loading the configuration: %v", err)
+		log.Fatalf("Failed while loading the configuration: %v", err)
 	}
 
 	// initialize the mqtt client and connect to the broker
