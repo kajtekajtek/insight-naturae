@@ -8,6 +8,10 @@ import (
 
 // generate a length byte long random secret key
 func GenerateSecretKey(length int) ([]byte, error) {
+	if length < 0 {
+		return nil, fmt.Errorf("Invalid key length: %d", length)
+	}	
+
 	key := make([]byte, length)
 
 	_, err := rand.Read(key)
