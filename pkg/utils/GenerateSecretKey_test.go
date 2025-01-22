@@ -1,3 +1,4 @@
+// pkg/utils/GenerateSecretKey_test.go - unit test for the GenerateSecretKey function
 package utils
 
 import (
