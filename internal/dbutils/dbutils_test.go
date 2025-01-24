@@ -31,6 +31,8 @@ func tearDownTestDB(db *sql.DB) {
 	os.Remove(testDBPath)
 }
 
+// --- CREATE tables ---
+
 func TestCreateSensorTable(t *testing.T) {
 	db := setupTestDB(t)
 	defer tearDownTestDB(db)
@@ -46,6 +48,16 @@ func TestCreateUserTable(t *testing.T) {
 	err := CreateUserTable(db)
 	assert.NoError(t, err)
 }
+
+func TestCreateUserSensorTable(t *testing.T) {
+	db := setupTestDB(t)
+	defer tearDownTestDB(db)
+
+	err := CreateUserSensorTable(db)
+	assert.NoError(t, err)
+}
+
+// --- INSERT operations ---
 
 func TestInsertSensorData(t *testing.T) {
 	db := setupTestDB(t)
@@ -75,6 +87,21 @@ func TestInsertUserData(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestInsertUserSensorData(t *testing.T) {
+	db := setupTestDB(t)
+	defer tearDownTestDB(db)
+
+	userSensor := models.UserSensor{
+		Username:   "testuser",
+		SensorID: "testsensor",
+	}
+
+	err := InsertUserSensorData(db, userSensor)
+	assert.NoError(t, err)
+}
+
+// --- SELECT operations ---
+
 func TestDumpSensorData(t *testing.T) {
 	db := setupTestDB(t)
 	defer tearDownTestDB(db)
@@ -95,7 +122,7 @@ func TestDumpSensorData(t *testing.T) {
 	assert.Equal(t, data, sensorData[0])
 }
 
-func TestGetUserByUsername(t *testing.T) {
+func TestGetUsersByUsername(t *testing.T) {
 	db := setupTestDB(t)
 	defer tearDownTestDB(db)
 
@@ -107,9 +134,49 @@ func TestGetUserByUsername(t *testing.T) {
 	err := InsertUserData(db, user)
 	assert.NoError(t, err)
 
-	userData, err := GetUserByUsername(db, "testuser")
+	userData, err := GetUsersByUsername(db, "testuser")
 	assert.NoError(t, err)
 	assert.Len(t, userData, 1)
 	assert.Equal(t, user.Username, userData[0].Username)
 	assert.Equal(t, user.Password, userData[0].Password)
+}
+
+func TestGetUserSensors(t *testing.T) {
+	db := setupTestDB(t)
+	defer tearDownTestDB(db)
+
+	userSensor := models.UserSensor{
+		Username:   "testuser",
+		SensorID: "testsensor",
+	}
+
+	err := InsertUserSensorData(db, userSensor)
+	assert.NoError(t, err)
+
+	userSensors, err := GetUserSensors(db, "testuser")
+	assert.NoError(t, err)
+	assert.Len(t, userSensors, 1)
+	assert.Equal(t, userSensor.Username, userSensors[0].Username)
+	assert.Equal(t, userSensor.SensorID, userSensors[0].SensorID)
+}
+
+// --- DELETE operations ---
+func TestRemoveUserSensor(t *testing.T) {
+	db := setupTestDB(t)
+	defer tearDownTestDB(db)
+
+	userSensor := models.UserSensor{
+		Username:   "testuser",
+		SensorID: "testsensor",
+	}
+
+	err := InsertUserSensorData(db, userSensor)
+	assert.NoError(t, err)
+
+	err = RemoveUserSensor(db, userSensor)
+	assert.NoError(t, err)
+
+	userSensors, err := GetUserSensors(db, "testuser")
+	assert.NoError(t, err)
+	assert.Len(t, userSensors, 0)
 }
