@@ -7,7 +7,7 @@ import (
 )
 
 func TestGenerateSecretKey(t *testing.T) {
-	lengths := []int{-1, 0, 1, 16, 32, 64}
+	lengths := []int{-1, 0, 1, 16, 32, 64, 128, 256, 512, 1024}
 
 	for _, length := range lengths {
 		key, err := GenerateSecretKey(length)
