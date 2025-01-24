@@ -3,6 +3,7 @@ package middleware
 
 import (
 	"net/http"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kajtekajtek/insight-naturae/internal/jwtutils"
@@ -11,9 +12,18 @@ import (
 func AuthMiddleware(secret []byte) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// get the token from the Authorization header
-		token := c.GetHeader("Authorization")
-		if token == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing token"})
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing Authorization Header"})
+			c.Abort()
+			return
+		}
+
+		// extract the token from the header
+		var token string
+		_, err := fmt.Sscanf(authHeader, "Bearer %s", &token)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Authorization Header"})
 			c.Abort()
 			return
 		}
@@ -27,7 +37,7 @@ func AuthMiddleware(secret []byte) gin.HandlerFunc {
 		}
 
 		// set the username in the context
-		c.Set("username", username)
+		c.Request.Header.Set("Username", username)
 		// continue with the request
 		c.Next()
 	}
