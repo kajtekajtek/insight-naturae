@@ -1,4 +1,4 @@
-// internal/api/api.go - API handlers
+// internal/api/user.go - API handlers
 package api
 
 import (
