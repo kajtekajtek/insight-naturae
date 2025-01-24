@@ -25,6 +25,22 @@ func RegisterHandler(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
+		// check if the user already exists
+		if users, err := dbutils.GetUserByUsername(db, user.Username); err != nil || len(users) > 0 {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "User already exists"})
+			return
+		}
+
+		// hash the user password
+		hashedPsswrd, err := bcrypt.GenerateFromPassword([]byte(
+			user.Password), bcrypt.DefaultCost)	
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to hash password"})
+		}
+		user.Password = string(hashedPsswrd)
+
 		// insert the user data into the database
 		if err := dbutils.InsertUserData(db, user); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -51,16 +67,31 @@ func LoginHandler(db *sql.DB, secret []byte) gin.HandlerFunc {
 		}
 		
 		// get the user data from the database
-		user, err := dbutils.GetUserByUsername(db, creds.Username)
-		// check if the user exists and the password is correct
-		if err != nil || bcrypt.CompareHashAndPassword(
-			[]byte(user.Password), []byte(creds.Password)) != nil {
+		var users []models.User
+		users, err := dbutils.GetUserByUsername(db, creds.Username)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to query user"})
+			return
+		} 
+
+		// check if the user exists
+		if len(users) != 1 {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": "Invalid credentials"})
+			return
+		} else {
+			// check if the password is correct
+			if err := bcrypt.CompareHashAndPassword([]byte(users[0].Password),
+				[]byte(creds.Password)); err != nil {
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"error": "Invalid credentials"})
+				return
+			}
 		}
 
 		// generate a JWT token
-		token, err := jwtutils.GenerateJWT(secret, user.Username)
+		token, err := jwtutils.GenerateJWT(secret, users[0].Username)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to generate token"})

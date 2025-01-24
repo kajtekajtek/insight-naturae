@@ -7,8 +7,6 @@ import  (
 
 	"github.com/kajtekajtek/insight-naturae/pkg/models"
 	"github.com/kajtekajtek/insight-naturae/pkg/database"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 func CreateDatabase(DBPath string) (*sql.DB, error) {
@@ -82,17 +80,11 @@ func InsertSensorData(db *sql.DB, data models.SensorData) error {
 }
 
 func InsertUserData(db *sql.DB, user models.User) error {
-	hashedPsswrd, err := bcrypt.GenerateFromPassword([]byte(user.Password),
-		bcrypt.DefaultCost)	
-	if err != nil {
-		return fmt.Errorf("failed to insert user data: %v", err)
-	}
-
 	insertSQL := `
 		INSERT INTO Users (username, password)
 		VALUES (?, ?);`
 
-	_, err = db.Exec(insertSQL, user.Username, string(hashedPsswrd))
+	_, err := db.Exec(insertSQL, user.Username, user.Password)
 	if err != nil {
 		return fmt.Errorf("failed to insert user data: %v", err)
 	}
@@ -127,17 +119,25 @@ func DumpSensorData(db *sql.DB) ([]models.SensorData, error) {
 	return data, nil
 }
 
-func GetUserByUsername(db *sql.DB, username string) (models.User, error) {
+func GetUserByUsername(db *sql.DB, username string) ([]models.User, error) {
 	querySQL := `
 		SELECT username, password FROM Users WHERE username = ?;`
 	
-	row := db.QueryRow(querySQL, username)
-
-	var user models.User
-	// copy each column into a field in the struct
-	err := row.Scan(&user.Username, &user.Password)
+	rows, err := db.Query(querySQL, username)
 	if err != nil {
-		return models.User{}, fmt.Errorf("failed to scan user data: %v", err)
+		return nil, fmt.Errorf("failed to query user data: %v", err)
+	}
+	defer rows.Close()
+
+	// iterate over the query results
+	var user []models.User
+	for rows.Next() {
+		var u models.User
+		err := rows.Scan(&u.Username, &u.Password)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan user data: %v", err)
+		}
+		user = append(user, u)
 	}
 
 	return user, nil
