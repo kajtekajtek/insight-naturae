@@ -188,7 +188,7 @@ func TestLoginHandlerNonExistingUser(t *testing.T) {
 }
 
 // try to login with invalid password
-func testLoginHandlerInvalidCredentials(t *testing.T) {
+func testLoginHandlerInvalidPassword(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
@@ -210,6 +210,42 @@ func testLoginHandlerInvalidCredentials(t *testing.T) {
 	user = models.User{
 		Username: username,
 		Password: "wrongpassword",
+	}
+	payload, _ = json.Marshal(user)
+
+	// test the login endpoint
+	req, _ = http.NewRequest("POST", "/login", bytes.NewBuffer(payload))
+
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid credentials")
+}
+
+// try to login with invalid username
+func testLoginHandlerInvalidUsername(t *testing.T) {
+	db := SetupTestDB(t)
+	defer TearDownTestDB(db)
+
+	r := SetupRouter(db)
+
+	// create the user payload
+	user := models.User{
+		Username: username,
+		Password: password,
+	}
+	payload, _ := json.Marshal(user)
+
+	// register the user
+	req, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(payload))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	// create the user payload
+	user = models.User{
+		Username: "wrongusername",
+		Password: password,
 	}
 	payload, _ = json.Marshal(user)
 
