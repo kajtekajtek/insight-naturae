@@ -159,6 +159,33 @@ func TestAddSensorUnauthorized(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Missing Authorization Header")
 }
 
+// add a sensor with a token passed in wrong format
+func TestAddSensorInvalidTokenHeaderFormat(t *testing.T) {
+	db := SetupTestDB(t)
+	defer TearDownTestDB(db)
+	
+	r := SetupRouter(db)
+
+	token := SetupUser(t, db, r)
+	
+	// create the sensor payload
+	sensor := models.UserSensor{
+		Username: username,
+		SensorID: sensorID,
+	}
+	payload, _ := json.Marshal(sensor)
+
+	// add sensor to the user
+	req, _ := http.NewRequest("POST", "/user/sensors", bytes.NewBuffer(payload))
+	req.Header.Set("Authorization", token) // missing Bearer
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid Authorization Header")
+}
+
 // get sensors followed by the user
 func TestGetSensors(t *testing.T) {
 	db := SetupTestDB(t)
@@ -247,6 +274,26 @@ func TestGetSensorsInvalidToken(t *testing.T) {
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 	assert.Contains(t, w.Body.String(), "Invalid token")
+}
+
+// get sensors with an invalid token header format
+func TestGetSensorsInvalidTokenHeaderFormat(t *testing.T) {
+	db := SetupTestDB(t)
+	defer TearDownTestDB(db)
+	
+	r := SetupRouter(db)
+
+	token := SetupUser(t, db, r)
+
+	// get the sensors
+	req, _ := http.NewRequest("GET", "/user/sensors", nil)
+	req.Header.Set("Authorization", token) // missing Bearer
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid Authorization Header")
 }
 
 // remove a sensor from the user's list
@@ -406,4 +453,31 @@ func TestRemoveSensorMissingField(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.Contains(t, w.Body.String(), "Invalid input")
+}
+
+// remove a sensor with an invalid token header format
+func TestRemoveSensorInvalidTokenHeaderFormat(t *testing.T) {
+	db := SetupTestDB(t)
+	defer TearDownTestDB(db)
+	
+	r := SetupRouter(db)
+
+	token := SetupUser(t, db, r)
+
+	// create the sensor payload
+	sensor := models.UserSensor{
+		Username: username,
+		SensorID: sensorID,
+	}
+	payload, _ := json.Marshal(sensor)
+
+	// remove the sensor
+	req, _ := http.NewRequest("DELETE", "/user/sensors/" + sensorID, bytes.NewBuffer(payload))
+	req.Header.Set("Authorization", token) // missing Bearer
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid Authorization Header")
 }
