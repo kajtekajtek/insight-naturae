@@ -27,7 +27,6 @@ func TestRegisterHandler(t *testing.T) {
 
 	// test the register endpoint
 	req, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(payload))
-	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -52,14 +51,12 @@ func TestRegisterHandlerExistingUser(t *testing.T) {
 
 	// register the user
 	req, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(payload))
-	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
 	// register the same user again
 	req, _ = http.NewRequest("POST", "/register", bytes.NewBuffer(payload))
-	req.Header.Set("Content-Type", "application/json")
 
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -83,7 +80,6 @@ func TestRegisterHandlerFieldMissing(t *testing.T) {
 
 	// test the register endpoint
 	req, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(payload))
-	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -108,7 +104,6 @@ func TestRegisterHandlerEmptyStrings(t *testing.T) {
 
 	// test the register endpoint
 	req, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(payload))
-	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -132,13 +127,11 @@ func TestLoginHandler(t *testing.T) {
 
 	// register the user
 	req, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(payload))
-	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
 	// test the login endpoint
 	req, _ = http.NewRequest("POST", "/login", bytes.NewBuffer(payload))
-	req.Header.Set("Content-Type", "application/json")
 
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -162,7 +155,6 @@ func TestLoginHandlerFieldMissing(t *testing.T) {
 
 	// test the login endpoint
 	req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(payload))
-	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -187,7 +179,6 @@ func TestLoginHandlerNonExistingUser(t *testing.T) {
 
 	// test the login endpoint
 	req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(payload))
-	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -212,7 +203,6 @@ func testLoginHandlerInvalidCredentials(t *testing.T) {
 
 	// register the user
 	req, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(payload))
-	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
@@ -225,7 +215,6 @@ func testLoginHandlerInvalidCredentials(t *testing.T) {
 
 	// test the login endpoint
 	req, _ = http.NewRequest("POST", "/login", bytes.NewBuffer(payload))
-	req.Header.Set("Content-Type", "application/json")
 
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -250,7 +239,6 @@ func testLoginHandlerEmptyStrings(t *testing.T) {
 
 	// test the login endpoint
 	req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(payload))
-	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
