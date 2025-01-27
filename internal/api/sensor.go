@@ -30,12 +30,13 @@ func AddSensorHandler(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		// check if the sensor already exists
+		// get user sensors
 		if sensors, err := dbutils.GetUserSensors(db, userSensor.Username); 
 			err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to get user sensors"})
 			return
+		// check if the sensor already exists on the user's list
 		} else {
 			for _, sensor := range sensors {
 				if sensor.SensorID == userSensor.SensorID {
