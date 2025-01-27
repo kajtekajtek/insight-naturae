@@ -7,53 +7,16 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"database/sql"
-	"os"
 
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
 	"github.com/kajtekajtek/insight-naturae/pkg/models"
 )
-
-const testDBPath = "test.db"
-const JWTSecret = "testjwtsecretkey"
-const username = "testuser"
-const password = "testpassword"
-
-func SetupTestDB(t *testing.T) *sql.DB {
-	// delete the test database if it exists
-	if _, err := os.Stat(testDBPath); err == nil {
-		err := os.Remove(testDBPath)
-		assert.NoError(t, err)
-	}
-
-	// create the test database
-	db, err := dbutils.CreateDatabase(testDBPath)
-	assert.NoError(t, err)
-	assert.NotNil(t, db)
-	return db
-}
-
-func TearDownTestDB(db *sql.DB) {
-	db.Close()
-	os.Remove(testDBPath)
-}
-
-func setupRouter(db *sql.DB) *gin.Engine {
-	r := gin.Default()
-
-	r.POST("/register", RegisterHandler(db))
-	r.POST("/login", LoginHandler(db, []byte(JWTSecret)))
-
-	return r
-}
 
 func TestRegisterHandler(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := setupRouter(db)
+	r := SetupRouter(db)
 
 	// create the user payload
 	user := models.User{
@@ -78,7 +41,7 @@ func TestRegisterHandlerExistingUser(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := setupRouter(db)
+	r := SetupRouter(db)
 
 	// create the user payload
 	user := models.User{
@@ -110,7 +73,7 @@ func TestRegisterHandlerFieldMissing(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := setupRouter(db)
+	r := SetupRouter(db)
 
 	// create the user payload
 	user := models.User{
@@ -134,7 +97,7 @@ func TestRegisterHandlerEmptyStrings(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := setupRouter(db)
+	r := SetupRouter(db)
 
 	// create the user payload
 	user := models.User{
@@ -158,7 +121,7 @@ func TestLoginHandler(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := setupRouter(db)
+	r := SetupRouter(db)
 
 	// create the user payload
 	user := models.User{
@@ -189,7 +152,7 @@ func TestLoginHandlerFieldMissing(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := setupRouter(db)
+	r := SetupRouter(db)
 
 	// create the user payload
 	user := models.User{
@@ -213,7 +176,7 @@ func TestLoginHandlerNonExistingUser(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := setupRouter(db)
+	r := SetupRouter(db)
 
 	// create the user payload
 	user := models.User{
@@ -238,7 +201,7 @@ func testLoginHandlerInvalidCredentials(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := setupRouter(db)
+	r := SetupRouter(db)
 
 	// create the user payload
 	user := models.User{
@@ -276,7 +239,7 @@ func testLoginHandlerEmptyStrings(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := setupRouter(db)
+	r := SetupRouter(db)
 
 	// create the user payload
 	user := models.User{
