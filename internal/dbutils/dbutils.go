@@ -25,6 +25,11 @@ func CreateDatabase(DBPath string) (*sql.DB, error) {
 		return nil, err
 	}
 
+	// create the user sensor table
+	if err := CreateUserSensorTable(db); err != nil {
+		return nil, err
+	}
+
 	return db, nil
 }
 
@@ -64,6 +69,22 @@ func CreateUserTable(db *sql.DB) error {
 	return nil;
 }
 
+func CreateUserSensorTable(db *sql.DB) error {
+	userSensorTableSQL := `
+		CREATE TABLE IF NOT EXISTS UserSensor (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			username TEXT NOT NULL,
+			sensor_id TEXT NOT NULL
+		);`
+
+	_, err := db.Exec(userSensorTableSQL)
+	if err != nil {
+		return fmt.Errorf("failed to create user sensor table: %v", err)
+	}
+
+	return nil
+}
+
 // --- INSERT data ---
 
 func InsertSensorData(db *sql.DB, data models.SensorData) error {
@@ -87,6 +108,19 @@ func InsertUserData(db *sql.DB, user models.User) error {
 	_, err := db.Exec(insertSQL, user.Username, user.Password)
 	if err != nil {
 		return fmt.Errorf("failed to insert user data: %v", err)
+	}
+
+	return nil
+}
+
+func InsertUserSensorData(db *sql.DB, userSensor models.UserSensor) error {
+	insertSQL := `
+		INSERT INTO UserSensor (username, sensor_id)
+		VALUES (?, ?);`
+
+	_, err := db.Exec(insertSQL, userSensor.Username, userSensor.SensorID)
+	if err != nil {
+		return fmt.Errorf("failed to insert user sensor data: %v", err)
 	}
 
 	return nil
@@ -119,7 +153,7 @@ func DumpSensorData(db *sql.DB) ([]models.SensorData, error) {
 	return data, nil
 }
 
-func GetUserByUsername(db *sql.DB, username string) ([]models.User, error) {
+func GetUsersByUsername(db *sql.DB, username string) ([]models.User, error) {
 	querySQL := `
 		SELECT username, password FROM Users WHERE username = ?;`
 	
@@ -141,4 +175,41 @@ func GetUserByUsername(db *sql.DB, username string) ([]models.User, error) {
 	}
 
 	return user, nil
+}
+
+func GetUserSensors(db *sql.DB, username string) ([]models.UserSensor, error) {
+	querySQL := `
+		SELECT username, sensor_id FROM UserSensor WHERE username = ?;`
+	
+	rows, err := db.Query(querySQL, username)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user sensor data: %v", err)
+	}
+	defer rows.Close()
+
+	// iterate over the query results
+	var userSensor []models.UserSensor
+	for rows.Next() {
+		var us models.UserSensor
+		err := rows.Scan(&us.Username, &us.SensorID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan user sensor data: %v", err)
+		}
+		userSensor = append(userSensor, us)
+	}
+
+	return userSensor, nil
+}
+
+// --- DELETE data ---
+func RemoveUserSensor(db *sql.DB, userSensor models.UserSensor) error {
+	deleteSQL := `
+		DELETE FROM UserSensor WHERE username = ? AND sensor_id = ?;`
+
+	_, err := db.Exec(deleteSQL, userSensor.Username, userSensor.SensorID)
+	if err != nil {
+		return fmt.Errorf("failed to delete user sensor data: %v", err)
+	}
+
+	return nil
 }

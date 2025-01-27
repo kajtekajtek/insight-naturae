@@ -8,6 +8,7 @@ import (
 	"github.com/kajtekajtek/insight-naturae/internal/mqttutils"
 	"github.com/kajtekajtek/insight-naturae/internal/api"	
 	"github.com/kajtekajtek/insight-naturae/internal/config"
+	"github.com/kajtekajtek/insight-naturae/internal/middleware"
 	"github.com/kajtekajtek/insight-naturae/pkg/mqtt"
 
 	"github.com/gin-gonic/gin"
@@ -43,8 +44,16 @@ func main() {
 
 	// run the API server
 	router := gin.Default()
+	// public routes
 	router.POST("/register", api.RegisterHandler(db))
 	router.POST("/login", api.LoginHandler(db, conf.JWTSecret))
+	// protected routes
+	protected := router.Group("/user", middleware.AuthMiddleware(conf.JWTSecret))
+	{
+		protected.POST("/sensors", api.AddSensorHandler(db))
+		protected.GET("/sensors", api.GetSensorsHandler(db))
+		protected.DELETE("/sensors/:id", api.RemoveSensorHandler(db))
+	}
 
 	router.Run(":8080")
 }

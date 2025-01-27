@@ -1,4 +1,4 @@
-// internal/api/api.go - API handlers
+// internal/api/user.go - user authentication API handlers
 package api
 
 import (
@@ -25,8 +25,15 @@ func RegisterHandler(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
+		// check if the user data is valid
+		if user.Username == "" || user.Password == "" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid input"})
+			return
+		}
+
 		// check if the user already exists
-		if users, err := dbutils.GetUserByUsername(db, user.Username); err != nil || len(users) > 0 {
+		if users, err := dbutils.GetUsersByUsername(db, user.Username); err != nil || len(users) > 0 {
 			c.JSON(http.StatusConflict, gin.H{
 				"error": "User already exists"})
 			return
@@ -65,10 +72,17 @@ func LoginHandler(db *sql.DB, secret []byte) gin.HandlerFunc {
 				"error": "Invalid input"})
 			return
 		}
+
+		// check if the user credentials are valid
+		if creds.Username == "" || creds.Password == "" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid input"})
+			return
+		}
 		
 		// get the user data from the database
 		var users []models.User
-		users, err := dbutils.GetUserByUsername(db, creds.Username)
+		users, err := dbutils.GetUsersByUsername(db, creds.Username)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to query user"})
