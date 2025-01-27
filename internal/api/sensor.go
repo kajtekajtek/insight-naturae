@@ -12,7 +12,7 @@ import (
 )
 
 // handle adding a sensor for a user to follow
-func AddSensorForUserHandler(db *sql.DB) gin.HandlerFunc {
+func AddSensorHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var userSensor models.UserSensor // user sensor data struct
 
@@ -73,7 +73,7 @@ func GetUserSensorsHandler(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
-func RemoveSensorForUserHandler(db *sql.DB) gin.HandlerFunc {
+func RemoveSensorHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var userSensor models.UserSensor // user sensor data struct
 
