@@ -92,6 +92,34 @@ func RemoveSensorHandler(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
+		// check if the both fields are provided
+		if userSensor.Username == "" || userSensor.SensorID == "" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid input"})
+			return
+		}
+
+		// check if the sensor exists on the user's list
+		if sensors, err := dbutils.GetUserSensors(db, userSensor.Username);
+			err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to get user sensors"})
+			return
+		} else {
+			found := false
+			for _, sensor := range sensors {
+				if sensor.SensorID == userSensor.SensorID {
+					found = true
+					break
+				}
+			}
+			if !found {
+				c.JSON(http.StatusNotFound, gin.H{
+					"error": "Sensor not found"})
+				return
+			}
+		}
+
 		// remove the user sensor data from the database
 		if err := dbutils.RemoveUserSensor(db, userSensor); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
