@@ -23,6 +23,13 @@ func AddSensorHandler(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
+		// check if the both fields are provided
+		if userSensor.Username == "" || userSensor.SensorID == "" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid input"})
+			return
+		}
+
 		// check if the sensor already exists
 		if sensors, err := dbutils.GetUserSensors(db, userSensor.Username); 
 			err != nil {
