@@ -73,7 +73,8 @@ func TestRegisterHandler(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "User registered successfully")
 }
 
-func TestRegisterHandlerConflict(t *testing.T) {
+// try to register existing user
+func TestRegisterHandlerExistingUser(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
@@ -104,7 +105,8 @@ func TestRegisterHandlerConflict(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "User already exists")
 }
 
-func TestRegisterHandlerInvalidInput(t *testing.T) {
+// try to register with password field missing
+func TestRegisterHandlerFieldMissing(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
@@ -113,6 +115,31 @@ func TestRegisterHandlerInvalidInput(t *testing.T) {
 	// create the user payload
 	user := models.User{
 		Username: username,
+	}
+	payload, _ := json.Marshal(user)
+
+	// test the register endpoint
+	req, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(payload))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid input")
+}
+
+// try to register with empty strings
+func TestRegisterHandlerEmptyStrings(t *testing.T) {
+	db := SetupTestDB(t)
+	defer TearDownTestDB(db)
+
+	r := setupRouter(db)
+
+	// create the user payload
+	user := models.User{
+		Username: "",
+		Password: "",
 	}
 	payload, _ := json.Marshal(user)
 
@@ -157,7 +184,8 @@ func TestLoginHandler(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "token")
 }
 
-func TestLoginHandlerInvalidInput(t *testing.T) {
+// try to login with invalid input
+func TestLoginHandlerFieldMissing(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
@@ -180,7 +208,8 @@ func TestLoginHandlerInvalidInput(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Invalid input")
 }
 
-func TestLoginHandlerInvalidCredentials(t *testing.T) {
+// try to login to a non-existing user
+func TestLoginHandlerNonExistingUser(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
@@ -202,4 +231,67 @@ func TestLoginHandlerInvalidCredentials(t *testing.T) {
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 	assert.Contains(t, w.Body.String(), "Invalid credentials")
+}
+
+// try to login with invalid password
+func testLoginHandlerInvalidCredentials(t *testing.T) {
+	db := SetupTestDB(t)
+	defer TearDownTestDB(db)
+
+	r := setupRouter(db)
+
+	// create the user payload
+	user := models.User{
+		Username: username,
+		Password: password,
+	}
+	payload, _ := json.Marshal(user)
+
+	// register the user
+	req, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(payload))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	// create the user payload
+	user = models.User{
+		Username: username,
+		Password: "wrongpassword",
+	}
+	payload, _ = json.Marshal(user)
+
+	// test the login endpoint
+	req, _ = http.NewRequest("POST", "/login", bytes.NewBuffer(payload))
+	req.Header.Set("Content-Type", "application/json")
+
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid credentials")
+}
+
+// try to login with empty strings
+func testLoginHandlerEmptyStrings(t *testing.T) {
+	db := SetupTestDB(t)
+	defer TearDownTestDB(db)
+
+	r := setupRouter(db)
+
+	// create the user payload
+	user := models.User{
+		Username: "",
+		Password: "",
+	}
+	payload, _ := json.Marshal(user)
+
+	// test the login endpoint
+	req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(payload))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid input")
 }
