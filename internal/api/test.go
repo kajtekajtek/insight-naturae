@@ -23,6 +23,7 @@ const (
 	JWTSecret = "testjwtscretkey"
 	username = "testuser"
 	password = "testpassword"
+	sensorID = "testsensor"
 )
 
 func SetupTestDB(t *testing.T) *sql.DB {
@@ -71,7 +72,6 @@ func SetupUser(t *testing.T, db *sql.DB, r *gin.Engine) string {
 
 	// register the user
 	req, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(payload))
-	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -80,7 +80,6 @@ func SetupUser(t *testing.T, db *sql.DB, r *gin.Engine) string {
 
 	// log in
 	req, _ = http.NewRequest("POST", "/login", bytes.NewBuffer(payload))
-	req.Header.Set("Content-Type", "application/json")
 
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
