@@ -52,7 +52,7 @@ func AddSensorHandler(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
-func GetUserSensorsHandler(db *sql.DB) gin.HandlerFunc {
+func GetSensorsHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		log.Println(c.Request.Header)
 		username := c.GetHeader("Username")

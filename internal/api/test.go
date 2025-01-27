@@ -43,5 +43,12 @@ func SetupRouter(db *sql.DB) *gin.Engine {
 	r.POST("/register", RegisterHandler(db))
 	r.POST("/login", LoginHandler(db, []byte(JWTSecret)))
 
+	protected := r.Group("/user", middleware.AuthMiddleware([]byte(JWTSecret)))
+	{
+		protected.POST("/sensors", AddSensorHandler(db))
+		protected.GET("/sensors", GetSensorsHandler(db))
+		protected.DELETE("/sensors/:id", RemoveSensorHandler(db))
+	}
+
 	return r
 }
