@@ -8,3 +8,4 @@
 go.work
 *.db
 .env
+coverage.html
