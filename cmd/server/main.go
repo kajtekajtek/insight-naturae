@@ -42,6 +42,9 @@ func main() {
 		}
 	}
 
+	// create the WebSocket client manager
+	clientManager := api.NewWebSocketClientManager()
+
 	// run the API server
 	router := gin.Default()
 	// public routes
@@ -53,6 +56,7 @@ func main() {
 		protected.POST("/sensors", api.AddSensorHandler(db))
 		protected.GET("/sensors", api.GetSensorsHandler(db))
 		protected.DELETE("/sensors/:id", api.RemoveSensorHandler(db))
+		protected.GET("/ws", clientManager.WebSocketHandler)
 	}
 
 	router.Run(":8080")
