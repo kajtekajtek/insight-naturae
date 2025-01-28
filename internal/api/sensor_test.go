@@ -3,13 +3,6 @@
 package api
 
 import (
-	/*
-	"database/sql"
-	"os"
-
-	"github.com/gin-gonic/gin"
-	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
-	 */
 	"testing"
 	"encoding/json"
 	"net/http"
