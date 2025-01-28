@@ -3,16 +3,15 @@
 package api
 
 import (
-	/*
 	"net/http/httptest"
-	*/
-	"github.com/gorilla/websocket"
 	"time"
 	"net/http"
 	"testing"
 	"strconv"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 )
 
 func TestNewWebSocketClientManager(t *testing.T) {
@@ -76,6 +75,23 @@ func TestWebSocketHandler(t *testing.T) {
 	cm.Mutex.RUnlock()
 
 	assert.False(t, exists)
+}
+
+// test the WebSocket connection handler when no username is provided
+func TestWebSocketHandlerNoUsername(t *testing.T) {
+	// only setup the router
+	r := gin.Default()
+	r.GET("/ws", NewWebSocketClientManager().WebSocketHandler)
+
+	// create a request without an username provided
+	req, _ := http.NewRequest("GET", "/ws", nil)
+
+	// send the request
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), "No username provided")
 }
 
 /* test message broadcasting: create a client manager, test server and

@@ -80,7 +80,7 @@ func (cm *WebSocketClientManager) WebSocketHandler(c *gin.Context) {
 	// get the username from the header
 	username := c.GetHeader("username")
 	if username == ""  {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "username is required"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "No username provided"})
 		return
 	}
 	// upgrade the HTTP connection to a websocket connection
