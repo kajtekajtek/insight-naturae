@@ -1,0 +1,116 @@
+/* internal/api/websocket_test.go - tests for the WebSocket 	
+	connection types, functions and methods */
+package api
+
+import (
+	/*
+	"net/http/httptest"
+	*/
+	"github.com/gorilla/websocket"
+	"time"
+	"net/http"
+	"testing"
+	"strconv"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewWebSocketClientManager(t *testing.T) {
+	cm := NewWebSocketClientManager()
+
+	assert.NotNil(t, cm)
+	assert.NotNil(t, cm.Clients)
+}
+
+func TestAddClient(t *testing.T) {
+	cm := NewWebSocketClientManager()
+	cm.AddClient("testuser", nil)
+
+	assert.NotNil(t, cm.Clients["testuser"])
+}
+
+func TestRemoveClient(t *testing.T) {
+	cm := NewWebSocketClientManager()
+	cm.AddClient("testuser", nil)
+	cm.RemoveClient("testuser")
+
+	assert.Nil(t, cm.Clients["testuser"])
+}
+
+/* test the main WebSocket connection handler: create a client manager, 
+	test server and connect to the server. Check if the client was added
+		to the manager and removed after the connection was closed */
+func TestWebSocketHandler(t *testing.T) {
+	// create a new WebSocketClientManager
+	cm := NewWebSocketClientManager()
+
+	// create a test server
+	server := SetupWSServer(t, cm)
+	defer server.Close()
+
+	url := "ws" + server.URL[4:] + "/ws"
+
+	/* normally, the user should pass a JSON Web Token in the headers 
+		and username would be extracted from it by the 
+			authentification middleware */
+	headers := http.Header{}
+	headers.Set("username", username)
+
+	// connect to the server
+	conn := SetupWSConnection(t, url, headers)
+	defer conn.Close()
+
+	// check if the client was added to the manager
+	cm.Mutex.RLock()
+	_, exists := cm.Clients[username]
+	cm.Mutex.RUnlock()
+
+	assert.True(t, exists)
+
+	// close the connection and check if the client was removed
+	conn.Close()
+	time.Sleep(2 * time.Second)
+
+	cm.Mutex.RLock()
+	_, exists = cm.Clients[username]
+	cm.Mutex.RUnlock()
+
+	assert.False(t, exists)
+}
+
+/* test message broadcasting: create a client manager, test server and
+	connect 3 clients to the server. Broadcast a message and check if
+		each client received the message */
+func TestBroadcast(t *testing.T) {
+	// create a new WebSocketClientManager
+	cm := NewWebSocketClientManager()
+	
+	// crate a test server
+	server := SetupWSServer(t, cm)
+	defer server.Close()
+
+	url := "ws" + server.URL[4:] + "/ws"
+
+	// create 3 connections
+	var conns []*websocket.Conn
+	for i := 0; i < 3; i++ {
+		headers := http.Header{}
+		headers.Set("username", username + strconv.Itoa(i)) 
+
+		conn := SetupWSConnection(t, url, headers)
+		conns = append(conns, conn)
+	}
+	defer func() {
+		for _, conn := range conns { conn.Close() }
+	}()
+
+	// broadcast a message
+	cm.Broadcast([]byte("Hello, World!"))
+
+	// check if each client received the message
+	for _, conn := range conns {
+		_, message, err := conn.ReadMessage()
+		assert.Nil(t, err)
+		assert.Equal(t, "Hello, World!", string(message))
+	}
+}
