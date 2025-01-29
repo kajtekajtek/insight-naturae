@@ -14,22 +14,22 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func TestNewWebSocketClientManager(t *testing.T) {
-	cm := NewWebSocketClientManager()
+func TestNewWSClientManager(t *testing.T) {
+	cm := NewWSClientManager()
 
 	assert.NotNil(t, cm)
 	assert.NotNil(t, cm.Clients)
 }
 
 func TestAddClient(t *testing.T) {
-	cm := NewWebSocketClientManager()
+	cm := NewWSClientManager()
 	cm.AddClient("testuser", nil)
 
 	assert.NotNil(t, cm.Clients["testuser"])
 }
 
 func TestRemoveClient(t *testing.T) {
-	cm := NewWebSocketClientManager()
+	cm := NewWSClientManager()
 	cm.AddClient("testuser", nil)
 	cm.RemoveClient("testuser")
 
@@ -40,8 +40,8 @@ func TestRemoveClient(t *testing.T) {
 	test server and connect to the server. Check if the client was added
 		to the manager and removed after the connection was closed */
 func TestWebSocketHandler(t *testing.T) {
-	// create a new WebSocketClientManager
-	cm := NewWebSocketClientManager()
+	// create a new WSClientManager
+	cm := NewWSClientManager()
 
 	// create a test server
 	server := SetupWSServer(t, cm)
@@ -81,7 +81,7 @@ func TestWebSocketHandler(t *testing.T) {
 func TestWebSocketHandlerNoUsername(t *testing.T) {
 	// only setup the router
 	r := gin.Default()
-	r.GET("/ws", NewWebSocketClientManager().WebSocketHandler)
+	r.GET("/ws", NewWSClientManager().WebSocketHandler)
 
 	// create a request without an username provided
 	req, _ := http.NewRequest("GET", "/ws", nil)
@@ -98,8 +98,8 @@ func TestWebSocketHandlerNoUsername(t *testing.T) {
 	connect 3 clients to the server. Broadcast a message and check if
 		each client received the message */
 func TestBroadcast(t *testing.T) {
-	// create a new WebSocketClientManager
-	cm := NewWebSocketClientManager()
+	// create a new WSClientManager
+	cm := NewWSClientManager()
 	
 	// crate a test server
 	server := SetupWSServer(t, cm)

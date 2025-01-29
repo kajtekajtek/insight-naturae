@@ -21,35 +21,35 @@ var upgrader = websocket.Upgrader{
 }
 
 // client connection struct
-type WebSocketClient struct {
+type WSClient struct {
 	Username string
 	Conn     *websocket.Conn
 }
 
 // client manager struct
-type WebSocketClientManager struct {
+type WSClientManager struct {
 	// clients map
-	Clients map[string]*WebSocketClient // [username] => client struct
+	Clients map[string]*WSClient // [username] => client struct
 	// mutex for data protection
 	Mutex   sync.RWMutex
 }
 
 // create a new client manager
-func NewWebSocketClientManager() *WebSocketClientManager {
-	return &WebSocketClientManager{
-		Clients: make(map[string]*WebSocketClient),
+func NewWSClientManager() *WSClientManager {
+	return &WSClientManager{
+		Clients: make(map[string]*WSClient),
 	}
 }
 
 // add a new client to the manager
-func (cm *WebSocketClientManager) AddClient(username string, conn *websocket.Conn) {
+func (cm *WSClientManager) AddClient(username string, conn *websocket.Conn) {
 	cm.Mutex.Lock()
 	defer cm.Mutex.Unlock()
-	cm.Clients[username] = &WebSocketClient{Username: username, Conn: conn}
+	cm.Clients[username] = &WSClient{Username: username, Conn: conn}
 }
 
 // remove a client from the manager
-func (cm *WebSocketClientManager) RemoveClient(username string) {
+func (cm *WSClientManager) RemoveClient(username string) {
 	cm.Mutex.Lock()
 	defer cm.Mutex.Unlock()
 	if client, found := cm.Clients[username]; found {
@@ -62,7 +62,7 @@ func (cm *WebSocketClientManager) RemoveClient(username string) {
 }
 
 // broadcast a message to all clients
-func (cm *WebSocketClientManager) Broadcast(message []byte) {
+func (cm *WSClientManager) Broadcast(message []byte) {
 	cm.Mutex.RLock()
 	defer cm.Mutex.RUnlock()
 	// loop through all clients and send message
@@ -76,7 +76,7 @@ func (cm *WebSocketClientManager) Broadcast(message []byte) {
 }
 
 // handle websocket connections
-func (cm *WebSocketClientManager) WebSocketHandler(c *gin.Context) {
+func (cm *WSClientManager) WebSocketHandler(c *gin.Context) {
 	// get the username from the header
 	username := c.GetHeader("username")
 	if username == ""  {

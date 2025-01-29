@@ -43,7 +43,7 @@ func main() {
 	}
 
 	// create the WebSocket client manager
-	clientManager := api.NewWebSocketClientManager()
+	clientManager := api.NewWSClientManager()
 
 	// run the API server
 	router := gin.Default()

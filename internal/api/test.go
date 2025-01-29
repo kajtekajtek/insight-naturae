@@ -95,7 +95,7 @@ func SetupUser(t *testing.T, db *sql.DB, r *gin.Engine) string {
 	return tokenString
 }
 
-func SetupWSServer(t *testing.T, cm *WebSocketClientManager) *httptest.Server {
+func SetupWSServer(t *testing.T, cm *WSClientManager) *httptest.Server {
 	r := gin.Default()
 
 	r.GET("/ws", cm.WebSocketHandler)
