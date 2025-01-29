@@ -10,6 +10,7 @@ import (
 	"github.com/kajtekajtek/insight-naturae/internal/config"
 	"github.com/kajtekajtek/insight-naturae/internal/middleware"
 	"github.com/kajtekajtek/insight-naturae/pkg/mqtt"
+	ws "github.com/kajtekajtek/insight-naturae/internal/websocket"
 
 	"github.com/gin-gonic/gin"
 )
@@ -43,7 +44,7 @@ func main() {
 	}
 
 	// create the WebSocket client manager
-	clientManager := api.NewWSClientManager()
+	clientManager := ws.NewWSClientManager()
 
 	// run the API server
 	router := gin.Default()

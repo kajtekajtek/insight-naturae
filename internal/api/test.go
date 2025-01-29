@@ -13,7 +13,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"github.com/gorilla/websocket"
 
 	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
 	"github.com/kajtekajtek/insight-naturae/internal/middleware"
@@ -93,20 +92,4 @@ func SetupUser(t *testing.T, db *sql.DB, r *gin.Engine) string {
 
 	// return the token string
 	return tokenString
-}
-
-func SetupWSServer(t *testing.T, cm *WSClientManager) *httptest.Server {
-	r := gin.Default()
-
-	r.GET("/ws", cm.WebSocketHandler)
-
-	return httptest.NewServer(r)
-}
-
-func SetupWSConnection(t *testing.T, url string, headers http.Header) *websocket.Conn {
-	conn, _, err := websocket.DefaultDialer.Dial(url, headers)
-
-	assert.NoError(t, err)
-
-	return conn
 }

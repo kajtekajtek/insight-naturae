@@ -1,6 +1,6 @@
-/* internal/api/websocket.go - types, functions and methods for handling 
+/* internal/websocket/websocket.go - types, functions and methods for handling 
 	WebSocket connections */
-package api
+package websocket
 
 import (
 	"log"
@@ -111,6 +111,36 @@ func (cm *WSClientManager) SendMessage(username string, message []byte) error {
 	return nil
 }
 
+/* ping pong function keeps the connection alive by sending ping messages 
+	and receiving pong messages, updating the connection status channel */
+func PingPong(connected chan bool, cm *WSClientManager, username string) {
+	cm.Mutex.RLock()
+	client, found := cm.Clients[username]
+	if !found {
+		connected <- false
+		return
+	}
+	conn := client.Conn
+	cm.Mutex.RUnlock()
+
+	// handle pong
+	conn.SetPongHandler(func(appData string) error {
+		log.Printf("Received pong from client %s", username)
+		return nil
+	})
+	// send ping
+	for {
+		err := cm.SendMessage(username, []byte("ping"))
+		if err != nil {
+			log.Printf("Failed to send ping to client %s: %v", 
+				username, err)
+			connected <- false
+			return
+		}
+		time.Sleep(1 * time.Second)
+	}
+}
+
 // handle websocket connections
 func (cm *WSClientManager) WebSocketHandler(c *gin.Context) {
 	// get the username from the header
@@ -134,19 +164,16 @@ func (cm *WSClientManager) WebSocketHandler(c *gin.Context) {
 	log.Printf("WebSocket connection with client %s established", username)
 
 	// ping pong to keep connection alive
+	status := make(chan bool)
+	go PingPong(status, cm, username)
 
-	// handle pong
-	conn.SetPongHandler(func(appData string) error {
-		log.Printf("Received pong from client %s", username)
-		return nil
-	})
-	// send ping
 	for {
-		err := cm.SendMessage(username, []byte("ping"))
-		if err != nil {
-			log.Printf("Failed to send ping to client %s: %v", username, err)
-			return
+		select {
+		// get the connection status from the ping pong function
+		case connected := <-status:
+			if !connected {
+				return
+			}
 		}
-		time.Sleep(1 * time.Second)
 	}
 }

@@ -1,6 +1,6 @@
-/* internal/api/websocket_test.go - tests for the WebSocket 	
+/* internal/websocket/websocket_test.go - tests for the WebSocket 	
 	connection types, functions and methods */
-package api
+package websocket
 
 import (
 	"net/http/httptest"
@@ -13,6 +13,26 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
+
+const (
+	username = "testuser"
+)
+
+func SetupWSServer(t *testing.T, cm *WSClientManager) *httptest.Server {
+	r := gin.Default()
+
+	r.GET("/ws", cm.WebSocketHandler)
+
+	return httptest.NewServer(r)
+}
+
+func SetupWSConnection(t *testing.T, url string, headers http.Header) *websocket.Conn {
+	conn, _, err := websocket.DefaultDialer.Dial(url, headers)
+
+	assert.NoError(t, err)
+
+	return conn
+}
 
 func TestNewWSClientManager(t *testing.T) {
 	cm := NewWSClientManager()
