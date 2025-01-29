@@ -4,6 +4,7 @@ package api
 
 import (
 	"log"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -24,6 +25,7 @@ var upgrader = websocket.Upgrader{
 type WSClient struct {
 	Username string
 	Conn     *websocket.Conn
+	Mutex	 sync.Mutex
 }
 
 // client manager struct
@@ -45,7 +47,7 @@ func NewWSClientManager() *WSClientManager {
 func (cm *WSClientManager) AddClient(username string, conn *websocket.Conn) {
 	cm.Mutex.Lock()
 	defer cm.Mutex.Unlock()
-	cm.Clients[username] = &WSClient{Username: username, Conn: conn}
+	cm.Clients[username] = &WSClient{Username: username, Conn: conn, Mutex: sync.Mutex{}}
 }
 
 // remove a client from the manager
@@ -57,22 +59,56 @@ func (cm *WSClientManager) RemoveClient(username string) {
 			client.Conn.Close()
 		}
 		delete(cm.Clients, username)
-		log.Printf("Client %s disconnected", username)
+		log.Printf("Client %s removed from Client Manager", username)
 	}
 }
 
 // broadcast a message to all clients
-func (cm *WSClientManager) Broadcast(message []byte) {
+func (cm *WSClientManager) Broadcast(message []byte) error {
+	// lock the clients map mutex
 	cm.Mutex.RLock()
 	defer cm.Mutex.RUnlock()
+
 	// loop through all clients and send message
 	for _, client := range cm.Clients {
-		if err := client.Conn.WriteMessage(websocket.TextMessage, message); err != nil {
-			// log error and close connection if failed to write message
-			log.Printf("Failed to write message to client %s: %v", client.Username, err)
+		client.Mutex.Lock() // lock the client mutex
+		defer client.Mutex.Unlock()
+
+		err := client.Conn.WriteMessage(websocket.TextMessage, message)
+		// log error and close connection if WriteMessage fails
+		if err != nil {
 			client.Conn.Close()
+
+			log.Printf("Failed to write message to client %s: %v", 
+				client.Username, err)
+			return fmt.Errorf("failed to write message to client %s: %v", 
+				client.Username, err)
 		}
 	}
+	return nil
+}
+
+// send a message to a specific client
+func (cm *WSClientManager) SendMessage(username string, message []byte) error {
+	cm.Mutex.RLock()
+	client, found := cm.Clients[username]
+	cm.Mutex.RUnlock()
+
+	if found {
+		client.Mutex.Lock()
+		defer client.Mutex.Unlock()
+		err := client.Conn.WriteMessage(websocket.TextMessage, message); 
+		// log error and close connection if failed to write message
+		if err != nil {
+			client.Conn.Close()
+
+			log.Printf("Failed to write message to client %s: %v", 
+				username, err)
+			return fmt.Errorf("failed to write message to client %s: %v", 
+				username, err)
+		}
+	}
+	return nil
 }
 
 // handle websocket connections
@@ -83,12 +119,14 @@ func (cm *WSClientManager) WebSocketHandler(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "No username provided"})
 		return
 	}
+
 	// upgrade the HTTP connection to a websocket connection
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Printf("Failed to upgrade connection to websocket: %v", err)
 		return
 	}
+
 	// add the client to the manager
 	cm.AddClient(username, conn)
 	defer cm.RemoveClient(username)
@@ -96,6 +134,7 @@ func (cm *WSClientManager) WebSocketHandler(c *gin.Context) {
 	log.Printf("WebSocket connection with client %s established", username)
 
 	// ping pong to keep connection alive
+
 	// handle pong
 	conn.SetPongHandler(func(appData string) error {
 		log.Printf("Received pong from client %s", username)
@@ -103,7 +142,7 @@ func (cm *WSClientManager) WebSocketHandler(c *gin.Context) {
 	})
 	// send ping
 	for {
-		err := conn.WriteMessage(websocket.PingMessage, nil)
+		err := cm.SendMessage(username, []byte("ping"))
 		if err != nil {
 			log.Printf("Failed to send ping to client %s: %v", username, err)
 			return

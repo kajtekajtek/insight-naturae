@@ -120,13 +120,85 @@ func TestBroadcast(t *testing.T) {
 		for _, conn := range conns { conn.Close() }
 	}()
 
+	// read the ping messages first
+	for _, conn := range conns {
+		_, msg, err := conn.ReadMessage()
+		assert.Nil(t, err)
+		assert.Equal(t, "ping", string(msg))
+	}
+
 	// broadcast a message
 	cm.Broadcast([]byte("Hello, World!"))
 
 	// check if each client received the message
 	for _, conn := range conns {
-		_, message, err := conn.ReadMessage()
+		_, msg, err := conn.ReadMessage()
 		assert.Nil(t, err)
-		assert.Equal(t, "Hello, World!", string(message))
+		assert.Equal(t, "Hello, World!", string(msg))
 	}
+}
+
+// test sending a message to a specific client
+func TestSendMessage(t *testing.T) {
+	// create a new WSClientManager
+	cm := NewWSClientManager()
+
+	// create a test server
+	server := SetupWSServer(t, cm)
+	defer server.Close()
+
+	url := "ws" + server.URL[4:] + "/ws"
+
+	// create a connection
+	headers := http.Header{}
+	headers.Set("username", username)
+
+	conn := SetupWSConnection(t, url, headers)
+	defer conn.Close()
+
+	_, msg, err := conn.ReadMessage()
+	assert.Nil(t, err)
+	assert.Equal(t, "ping", string(msg))	
+
+	// send a message
+	cm.SendMessage(username, []byte("Hello, World!"))
+
+	// check if the client received the message
+	_, msg, err = conn.ReadMessage()
+	assert.Nil(t, err)
+	assert.Equal(t, "Hello, World!", string(msg))
+}
+
+func TestSendMessageNoClient(t *testing.T) {
+	// create a new WSClientManager
+	cm := NewWSClientManager()
+
+	// send a message to a non-existing client
+	cm.SendMessage("nonexisting", []byte("Hello, World!"))
+
+	// no error should be thrown
+}
+
+func TestSendMessageClosedConnection(t *testing.T) {
+	// create a new WSClientManager
+	cm := NewWSClientManager()
+
+	// create a test server
+	server := SetupWSServer(t, cm)
+	defer server.Close()
+
+	url := "ws" + server.URL[4:] + "/ws"
+
+	// create a connection
+	headers := http.Header{}
+	headers.Set("username", username)
+
+	conn := SetupWSConnection(t, url, headers)
+	conn.Close()
+
+	// send a message
+	cm.SendMessage(username, []byte("Hello, World!"))
+
+	_, _, err := conn.ReadMessage()
+	assert.NotNil(t, err)
 }
