@@ -13,6 +13,7 @@ import (
 	ws "github.com/kajtekajtek/insight-naturae/internal/wsutils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/cors"
 )
 
 func main() {
@@ -46,12 +47,22 @@ func main() {
 		}
 	}
 
-	// run the API server
+	// set up the server
 	router := gin.Default()
+
+	// CORS
+	router.Use(cors.New(cors.Config{
+		AllowOrigins: c.CORSOrigins,
+		AllowMethods: []string{"GET", "POST", "DELETE", "OPTIONS"},
+		AllowHeaders: []string{"Authorization", "Content-Type"},
+		AllowCredentials: true,
+	}))
+
 	// public routes
 	router.POST("/register", api.RegisterHandler(db))
 	router.POST("/login", api.LoginHandler(db, conf.JWTSecret))
 	router.GET("/ws", clientManager.WebSocketHandler(db, conf.JWTSecret))
+
 	// protected routes
 	protected := router.Group("/user", middleware.AuthMiddleware(conf.JWTSecret))
 	{

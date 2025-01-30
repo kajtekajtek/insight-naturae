@@ -17,6 +17,7 @@ type Config struct {
 	Topics []string // topics to subscribe to
 	DBPath string // path to the SQLite database file
 	JWTSecret []byte // secret key for JWT signing
+	CORSOrigins []string // list of allowed origins for CORS
 }
 
 /* loads the configuration from the .env file if provided, 
@@ -53,6 +54,10 @@ func LoadConfig() (Config, error) {
 	} else {
 		c.JWTSecret = []byte(JWTSecretString)
 	}
+
+	// CORS allowed origins
+	origins := utils.Getenv("CORS_ORIGINS", "http://localhost:5000")
+	c.CORSOrigins = strings.Split(origins, ":")
 
 	return c, nil
 }
