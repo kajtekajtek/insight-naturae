@@ -14,24 +14,24 @@ import (
 // handle sensor subscription requests
 func SubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var userSensor models.UserSensor // user sensor data struct
+		var sensorSubscription models.SensorSubscription // user sensor data struct
 
 		// bind the JSON data to the user sensor struct
-		if err := c.ShouldBindJSON(&userSensor); err != nil {
+		if err := c.ShouldBindJSON(&sensorSubscription); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "Invalid input"})
 			return
 		}
 
 		// check if the both fields are provided
-		if userSensor.Username == "" || userSensor.SensorID == "" {
+		if sensorSubscription.Username == "" || sensorSubscription.SensorID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "Invalid input"})
 			return
 		}
 
 		// get user sensors
-		if sensors, err := dbutils.GetUserSensors(db, userSensor.Username); 
+		if sensors, err := dbutils.GetSensorSubscriptions(db, sensorSubscription.Username); 
 			err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to get user sensors"})
@@ -39,7 +39,7 @@ func SubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 		// check if the sensor already exists on the user's list
 		} else {
 			for _, sensor := range sensors {
-				if sensor.SensorID == userSensor.SensorID {
+				if sensor.SensorID == sensorSubscription.SensorID {
 					c.JSON(http.StatusConflict, gin.H{
 						"error": "Sensor already exists"})
 					return
@@ -48,7 +48,7 @@ func SubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 		}
 
 		// insert the user sensor data into the database
-		if err := dbutils.InsertUserSensorData(db, userSensor); err != nil {
+		if err := dbutils.InsertSensorSubscriptionData(db, sensorSubscription); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to add sensor"})
 			return
@@ -71,7 +71,7 @@ func GetSensorsHandler(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		sensors, err := dbutils.GetUserSensors(db, username)
+		sensors, err := dbutils.GetSensorSubscriptions(db, username)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to get user sensors"})
@@ -85,24 +85,24 @@ func GetSensorsHandler(db *sql.DB) gin.HandlerFunc {
 // handle sensor unsubscription requests
 func UnsubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var userSensor models.UserSensor // user sensor data struct
+		var sensorSubscription models.SensorSubscription // user sensor data struct
 
 		// bind the JSON data to the user sensor struct
-		if err := c.ShouldBindJSON(&userSensor); err != nil {
+		if err := c.ShouldBindJSON(&sensorSubscription); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "Invalid input"})
 			return
 		}
 
 		// check if the both fields are provided
-		if userSensor.Username == "" || userSensor.SensorID == "" {
+		if sensorSubscription.Username == "" || sensorSubscription.SensorID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "Invalid input"})
 			return
 		}
 
 		// check if the sensor exists on the user's list
-		if sensors, err := dbutils.GetUserSensors(db, userSensor.Username);
+		if sensors, err := dbutils.GetSensorSubscriptions(db, sensorSubscription.Username);
 			err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to get user sensors"})
@@ -110,7 +110,7 @@ func UnsubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 		} else {
 			found := false
 			for _, sensor := range sensors {
-				if sensor.SensorID == userSensor.SensorID {
+				if sensor.SensorID == sensorSubscription.SensorID {
 					found = true
 					break
 				}
@@ -123,7 +123,7 @@ func UnsubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 		}
 
 		// remove the user's sensor subscription from the database
-		if err := dbutils.RemoveUserSensor(db, userSensor); err != nil {
+		if err := dbutils.RemoveSensorSubscription(db, sensorSubscription); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to remove sensor"})
 			return

@@ -49,11 +49,11 @@ func TestCreateUserTable(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestCreateUserSensorTable(t *testing.T) {
+func TestCreateSensorSubscriptionTable(t *testing.T) {
 	db := setupTestDB(t)
 	defer tearDownTestDB(db)
 
-	err := CreateUserSensorTable(db)
+	err := CreateSensorSubscriptionTable(db)
 	assert.NoError(t, err)
 }
 
@@ -87,16 +87,16 @@ func TestInsertUserData(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestInsertUserSensorData(t *testing.T) {
+func TestInsertSensorSubscriptionData(t *testing.T) {
 	db := setupTestDB(t)
 	defer tearDownTestDB(db)
 
-	userSensor := models.UserSensor{
+	sensorSubscription := models.SensorSubscription{
 		Username:   "testuser",
 		SensorID: "testsensor",
 	}
 
-	err := InsertUserSensorData(db, userSensor)
+	err := InsertSensorSubscriptionData(db, sensorSubscription)
 	assert.NoError(t, err)
 }
 
@@ -141,42 +141,42 @@ func TestGetUsersByUsername(t *testing.T) {
 	assert.Equal(t, user.Password, userData[0].Password)
 }
 
-func TestGetUserSensors(t *testing.T) {
+func TestGetSensorSubscriptions(t *testing.T) {
 	db := setupTestDB(t)
 	defer tearDownTestDB(db)
 
-	userSensor := models.UserSensor{
+	sensorSubscription := models.SensorSubscription{
 		Username:   "testuser",
 		SensorID: "testsensor",
 	}
 
-	err := InsertUserSensorData(db, userSensor)
+	err := InsertSensorSubscriptionData(db, sensorSubscription)
 	assert.NoError(t, err)
 
-	userSensors, err := GetUserSensors(db, "testuser")
+	sensorSubscriptions, err := GetSensorSubscriptions(db, "testuser")
 	assert.NoError(t, err)
-	assert.Len(t, userSensors, 1)
-	assert.Equal(t, userSensor.Username, userSensors[0].Username)
-	assert.Equal(t, userSensor.SensorID, userSensors[0].SensorID)
+	assert.Len(t, sensorSubscriptions, 1)
+	assert.Equal(t, sensorSubscription.Username, sensorSubscriptions[0].Username)
+	assert.Equal(t, sensorSubscription.SensorID, sensorSubscriptions[0].SensorID)
 }
 
 // --- DELETE operations ---
-func TestRemoveUserSensor(t *testing.T) {
+func TestRemoveSensorSubscription(t *testing.T) {
 	db := setupTestDB(t)
 	defer tearDownTestDB(db)
 
-	userSensor := models.UserSensor{
+	sensorSubscription := models.SensorSubscription{
 		Username:   "testuser",
 		SensorID: "testsensor",
 	}
 
-	err := InsertUserSensorData(db, userSensor)
+	err := InsertSensorSubscriptionData(db, sensorSubscription)
 	assert.NoError(t, err)
 
-	err = RemoveUserSensor(db, userSensor)
+	err = RemoveSensorSubscription(db, sensorSubscription)
 	assert.NoError(t, err)
 
-	userSensors, err := GetUserSensors(db, "testuser")
+	sensorSubscriptions, err := GetSensorSubscriptions(db, "testuser")
 	assert.NoError(t, err)
-	assert.Len(t, userSensors, 0)
+	assert.Len(t, sensorSubscriptions, 0)
 }

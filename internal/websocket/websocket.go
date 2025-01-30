@@ -164,7 +164,7 @@ func (cm *WSClientManager) WebSocketHandler(c *gin.Context) {
 
 	log.Printf("WebSocket connection with client %s established", username)
 
-	// ping pong to keep connection alive
+	// ping pong to keep the connection alive
 	status := make(chan bool)
 	go PingPong(status, cm, username)
 
