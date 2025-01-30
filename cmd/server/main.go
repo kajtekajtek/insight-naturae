@@ -10,7 +10,7 @@ import (
 	"github.com/kajtekajtek/insight-naturae/internal/config"
 	"github.com/kajtekajtek/insight-naturae/internal/middleware"
 	"github.com/kajtekajtek/insight-naturae/pkg/mqtt"
-	ws "github.com/kajtekajtek/insight-naturae/internal/websocket"
+	ws "github.com/kajtekajtek/insight-naturae/internal/wsutils"
 
 	"github.com/gin-gonic/gin"
 )

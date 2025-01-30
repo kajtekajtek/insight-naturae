@@ -1,6 +1,6 @@
-/* internal/websocket/websocket.go - types, functions and methods for handling 
+/* internal/wsutils/websocket.go - types, functions and methods for handling 
 	WebSocket connections */
-package websocket
+package wsutils
 
 import (
 	"log"
@@ -189,7 +189,7 @@ func PingPong(connected chan bool, cm *WSClientManager, username string) {
 	}
 }
 
-// handle websocket connections
+// handle wsutils connections
 func (cm *WSClientManager) WebSocketHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// get the username from the header
@@ -200,10 +200,10 @@ func (cm *WSClientManager) WebSocketHandler(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		// upgrade the HTTP connection to a websocket connection
+		// upgrade the HTTP connection to a wsutils connection
 		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
-			log.Printf("Failed to upgrade connection to websocket: %v", err)
+			log.Printf("Failed to upgrade connection to wsutils: %v", err)
 			return
 		}
 

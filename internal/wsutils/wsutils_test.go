@@ -1,6 +1,6 @@
-/* internal/websocket/websocket_test.go - tests for the WebSocket 	
+/* internal/wsutils/wsutils_test.go - tests for the WebSocket 	
 	connection types, functions and methods */
-package websocket
+package wsutils
 
 import (
 	"net/http/httptest"

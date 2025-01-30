@@ -8,7 +8,7 @@ import (
 
 	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
 	"github.com/kajtekajtek/insight-naturae/pkg/models"
-	"github.com/kajtekajtek/insight-naturae/internal/websocket"
+	"github.com/kajtekajtek/insight-naturae/internal/wsutils"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
@@ -16,7 +16,7 @@ import (
 /* function MessageHandler is a closure that returns a function 
 	which inserts the received sensor data into the database and
 	sends it through WebSocket to sensor's connected subscribers */
-func MessageHandler(db *sql.DB, cm *websocket.WSClientManager) mqtt.MessageHandler {
+func MessageHandler(db *sql.DB, cm *wsutils.WSClientManager) mqtt.MessageHandler {
 	return func(client mqtt.Client, msg mqtt.Message) {
 		// parse the message payload into a SensorData struct
 		data := models.SensorData{}
