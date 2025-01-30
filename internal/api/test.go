@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+
 	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
 	"github.com/kajtekajtek/insight-naturae/internal/middleware"
 	"github.com/kajtekajtek/insight-naturae/pkg/models"
@@ -53,9 +54,9 @@ func SetupRouter(db *sql.DB) *gin.Engine {
 
 	protected := r.Group("/user", middleware.AuthMiddleware([]byte(JWTSecret)))
 	{
-		protected.POST("/sensors", AddSensorHandler(db))
+		protected.POST("/sensors", SubscribeSensorHandler(db))
 		protected.GET("/sensors", GetSensorsHandler(db))
-		protected.DELETE("/sensors/:id", RemoveSensorHandler(db))
+		protected.DELETE("/sensors/:id", UnsubscribeSensorHandler(db))
 	}
 
 	return r

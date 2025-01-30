@@ -10,6 +10,7 @@ import (
 	"github.com/kajtekajtek/insight-naturae/internal/config"
 	"github.com/kajtekajtek/insight-naturae/internal/middleware"
 	"github.com/kajtekajtek/insight-naturae/pkg/mqtt"
+	ws "github.com/kajtekajtek/insight-naturae/internal/wsutils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,8 +34,11 @@ func main() {
 		log.Fatalf("Failed while initializing MQTT client: %v", err)
 	}
 
+	// create the WebSocket client manager
+	clientManager := ws.NewWSClientManager()
+
 	// subscribe to the topics
-	messageHandler := mqttutils.MessageHandler(db)
+	messageHandler := mqttutils.MessageHandler(db, clientManager)
 	for _, t := range conf.Topics {
 		log.Printf("Subscribing to topic: %s\n", t)
 		if token := mqttClient.Subscribe(t, 0, messageHandler); token.Wait() && token.Error() != nil {
@@ -50,9 +54,10 @@ func main() {
 	// protected routes
 	protected := router.Group("/user", middleware.AuthMiddleware(conf.JWTSecret))
 	{
-		protected.POST("/sensors", api.AddSensorHandler(db))
+		protected.POST("/sensors", api.SubscribeSensorHandler(db))
 		protected.GET("/sensors", api.GetSensorsHandler(db))
-		protected.DELETE("/sensors/:id", api.RemoveSensorHandler(db))
+		protected.DELETE("/sensors/:id", api.UnsubscribeSensorHandler(db))
+		protected.GET("/ws", clientManager.WebSocketHandler(db))
 	}
 
 	router.Run(":8080")
