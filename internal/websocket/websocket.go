@@ -44,6 +44,7 @@ type WSClientManager struct {
 func NewWSClientManager() *WSClientManager {
 	return &WSClientManager{
 		Clients: make(map[string]*WSClient),
+		Subscriptions: make(map[string]map[string]bool),
 	}
 }
 
@@ -175,7 +176,7 @@ func PingPong(connected chan bool, cm *WSClientManager, username string) {
 }
 
 // handle websocket connections
-func (cm *WSClientManager) WebSocketHandler(db *sql.DB) {
+func (cm *WSClientManager) WebSocketHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// get the username from the header
 		username := c.GetHeader("username")
@@ -199,14 +200,14 @@ func (cm *WSClientManager) WebSocketHandler(db *sql.DB) {
 		log.Printf("WebSocket connection with client %s established", username)
 
 		// get user's subscriptions from the database
-		sensors, err := dbutils.GetUsersubscriptions(db, username);
+		sensors, err := dbutils.GetUserSubscriptions(db, username);
 		if err != nil {
 			log.Printf("Failed to get user %s subscriptions: %v", 
 				username, err)
 		} else {
 			// add the user to the subscriptions map for each sensor
 			for _, sensor := range sensors {
-				cm.Subscribe(username, sensor.sensorID)
+				cm.Subscribe(username, sensor.SensorID)
 			}
 		}
 

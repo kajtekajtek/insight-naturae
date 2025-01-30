@@ -57,7 +57,7 @@ func main() {
 		protected.POST("/sensors", api.SubscribeSensorHandler(db))
 		protected.GET("/sensors", api.GetSensorsHandler(db))
 		protected.DELETE("/sensors/:id", api.UnsubscribeSensorHandler(db))
-		protected.GET("/ws", clientManager.WebSocketHandler)
+		protected.GET("/ws", clientManager.WebSocketHandler(db))
 	}
 
 	router.Run(":8080")

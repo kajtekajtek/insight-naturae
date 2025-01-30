@@ -9,6 +9,8 @@ import (
 	"testing"
 	"strconv"
 
+	"github.com/kajtekajtek/insight-naturae/internal/api"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -19,9 +21,11 @@ const (
 )
 
 func SetupWSServer(t *testing.T, cm *WSClientManager) *httptest.Server {
+	db := api.SetupTestDB(t)	
+
 	r := gin.Default()
 
-	r.GET("/ws", cm.WebSocketHandler)
+	r.GET("/ws", cm.WebSocketHandler(db))
 
 	return httptest.NewServer(r)
 }
@@ -54,6 +58,21 @@ func TestRemoveClient(t *testing.T) {
 	cm.RemoveClient("testuser")
 
 	assert.Nil(t, cm.Clients["testuser"])
+}
+
+func TestSubscribe(t *testing.T) {
+	cm := NewWSClientManager()
+	cm.Subscribe("testuser", "testsensor")
+
+	assert.True(t, cm.Subscriptions["testsensor"]["testuser"])
+}
+
+func TestUnsubscribe(t *testing.T) {
+	cm := NewWSClientManager()
+	cm.Subscribe("testuser", "testsensor")
+	cm.Unsubscribe("testuser", "testsensor")
+
+	assert.False(t, cm.Subscriptions["testsensor"]["testuser"])
 }
 
 /* test the main WebSocket connection handler: create a client manager, 
@@ -99,9 +118,11 @@ func TestWebSocketHandler(t *testing.T) {
 
 // test the WebSocket connection handler when no username is provided
 func TestWebSocketHandlerNoUsername(t *testing.T) {
+	db := api.SetupTestDB(t)	
+
 	// only setup the router
 	r := gin.Default()
-	r.GET("/ws", NewWSClientManager().WebSocketHandler)
+	r.GET("/ws", NewWSClientManager().WebSocketHandler(db))
 
 	// create a request without an username provided
 	req, _ := http.NewRequest("GET", "/ws", nil)
