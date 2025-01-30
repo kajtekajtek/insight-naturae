@@ -8,6 +8,9 @@ import (
 	"net/http"
 	"sync"
 	"time"
+	"database/sql"
+
+	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -61,6 +64,35 @@ func (cm *WSClientManager) RemoveClient(username string) {
 		}
 		delete(cm.Clients, username)
 		log.Printf("Client %s removed from Client Manager", username)
+	}
+}
+
+// add the given username to the subscription list for the given sensor
+func (cm *WSClientManager) Subscribe(username string, sensorID string) {
+	cm.Mutex.Lock()
+	defer cm.Mutex.Unlock()
+
+	// create a new subscription map for given sensor if it doesn't exist
+	if _, exists := cm.Subscriptions[sensorID]; !exists {
+		cm.Subscriptions[sensorID] = make(map[string]bool)
+	}
+	// add the username to the subscription list
+	cm.Subscriptions[sensorID][username] = true
+}
+
+// remove the given username from the given sensor's subscription list
+func (cm *WSClientManager) Unsubscribe(username string, sensorID string) {
+	cm.Mutex.Lock()
+	defer cm.Mutex.Unlock()
+
+	// check if the sensor exists in the subscriptions map
+	if subscribers, exists := cm.Subscriptions[sensorID]; exists {
+		// remove the username from the sensor's subscription list
+		delete(subscribers, username)
+		// delete the sensor from the subscriptions map if no subscribers left
+		if len(subscribers) == 0 {
+			delete(cm.Subscriptions, sensorID)
+		}
 	}
 }
 
@@ -143,37 +175,52 @@ func PingPong(connected chan bool, cm *WSClientManager, username string) {
 }
 
 // handle websocket connections
-func (cm *WSClientManager) WebSocketHandler(c *gin.Context) {
-	// get the username from the header
-	username := c.GetHeader("username")
-	if username == ""  {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "No username provided"})
-		return
-	}
+func (cm *WSClientManager) WebSocketHandler(db *sql.DB) {
+	return func(c *gin.Context) {
+		// get the username from the header
+		username := c.GetHeader("username")
+		if username == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "No username provided"})
+			return
+		}
 
-	// upgrade the HTTP connection to a websocket connection
-	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-	if err != nil {
-		log.Printf("Failed to upgrade connection to websocket: %v", err)
-		return
-	}
+		// upgrade the HTTP connection to a websocket connection
+		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+		if err != nil {
+			log.Printf("Failed to upgrade connection to websocket: %v", err)
+			return
+		}
 
-	// add the client to the manager
-	cm.AddClient(username, conn)
-	defer cm.RemoveClient(username)
+		// add the client to the manager
+		cm.AddClient(username, conn)
+		defer cm.RemoveClient(username)
 
-	log.Printf("WebSocket connection with client %s established", username)
+		log.Printf("WebSocket connection with client %s established", username)
 
-	// ping pong to keep the connection alive
-	status := make(chan bool)
-	go PingPong(status, cm, username)
+		// get user's subscriptions from the database
+		sensors, err := dbutils.GetUsersubscriptions(db, username);
+		if err != nil {
+			log.Printf("Failed to get user %s subscriptions: %v", 
+				username, err)
+		} else {
+			// add the user to the subscriptions map for each sensor
+			for _, sensor := range sensors {
+				cm.Subscribe(username, sensor.sensorID)
+			}
+		}
 
-	for {
-		select {
-		// get the connection status from the ping pong function
-		case connected := <-status:
-			if !connected {
-				return
+		// ping pong to keep the connection alive
+		status := make(chan bool)
+		go PingPong(status, cm, username)
+
+		for {
+			select {
+			// get the connection status from the ping pong function
+			case connected := <-status:
+				if !connected {
+					return
+				}
 			}
 		}
 	}
