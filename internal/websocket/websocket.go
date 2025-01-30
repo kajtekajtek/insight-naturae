@@ -30,9 +30,10 @@ type WSClient struct {
 
 // client manager struct
 type WSClientManager struct {
-	// clients map
-	Clients map[string]*WSClient // [username] => client struct
-	// mutex for data protection
+	// [username] => client struct
+	Clients map[string]*WSClient
+	// [sensorID] => [username] => subscribed
+	Subscriptions map[string]map[string]bool 
 	Mutex   sync.RWMutex
 }
 
