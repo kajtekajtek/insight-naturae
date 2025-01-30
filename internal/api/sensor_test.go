@@ -13,8 +13,8 @@ import (
 	"github.com/kajtekajtek/insight-naturae/pkg/models"
 )
 
-// add a sensor to the user
-func TestAddSensor(t *testing.T) {
+// subscribe the sensor
+func TestSubscribeSensor(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
@@ -40,8 +40,8 @@ func TestAddSensor(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Sensor added successfully")
 }
 
-// add a sensor with an invalid payload
-func TestAddSensorInvalidPayload(t *testing.T) {
+// sensor subscription with an invalid payload
+func TestSubscribeSensorInvalidPayload(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
@@ -49,7 +49,7 @@ func TestAddSensorInvalidPayload(t *testing.T) {
 
 	token := SetupUser(t, db, r)
 
-	// send an invalid payload as a sensor
+	// send an invalid payload as the sensor
 	sensor := struct{
 		password string
 	}{
@@ -68,8 +68,8 @@ func TestAddSensorInvalidPayload(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Invalid input")
 }
 
-// add a sensor with a missing field
-func TestAddSensorMissingField(t *testing.T) {
+// sensor subscription with a missing field
+func TestSubscribeSensorMissingField(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
@@ -94,8 +94,8 @@ func TestAddSensorMissingField(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Invalid input")
 }
 
-// add a sensor with an invalid token
-func TestAddSensorExistingSensor(t *testing.T) {
+// subscribe already subscribed sensor
+func TestSubscribeSensorSubscribedSensor(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
@@ -110,14 +110,14 @@ func TestAddSensorExistingSensor(t *testing.T) {
 	}
 	payload, _ := json.Marshal(sensor)
 
-	// add sensor to the user
+	// subscribe the sensor
 	req, _ := http.NewRequest("POST", "/user/sensors", bytes.NewBuffer(payload))
 	req.Header.Set("Authorization", "Bearer " + token)
 
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	// add the same sensor again
+	// subscribe the sensor again
 	req, _ = http.NewRequest("POST", "/user/sensors", bytes.NewBuffer(payload))
 	req.Header.Set("Authorization", "Bearer " + token)
 
@@ -128,8 +128,8 @@ func TestAddSensorExistingSensor(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Sensor already exists")
 }
 
-// add a sensor as an unauthorized user
-func TestAddSensorUnauthorized(t *testing.T) {
+// subscribe the sensor as an unauthorized user
+func TestSubscribeSensorUnauthorized(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
@@ -142,7 +142,7 @@ func TestAddSensorUnauthorized(t *testing.T) {
 	}
 	payload, _ := json.Marshal(sensor)
 
-	// add sensor to the user
+	// subscribe the sensor
 	req, _ := http.NewRequest("POST", "/user/sensors", bytes.NewBuffer(payload))
 
 	w := httptest.NewRecorder()
@@ -152,8 +152,8 @@ func TestAddSensorUnauthorized(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Missing Authorization Header")
 }
 
-// add a sensor with a token passed in wrong format
-func TestAddSensorInvalidTokenHeaderFormat(t *testing.T) {
+// subscribe the sensor with a token passed in wrong format
+func TestSubscribeSensorInvalidTokenHeaderFormat(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
@@ -168,7 +168,7 @@ func TestAddSensorInvalidTokenHeaderFormat(t *testing.T) {
 	}
 	payload, _ := json.Marshal(sensor)
 
-	// add sensor to the user
+	// subscribe the sensor
 	req, _ := http.NewRequest("POST", "/user/sensors", bytes.NewBuffer(payload))
 	req.Header.Set("Authorization", token) // missing Bearer
 
@@ -179,7 +179,7 @@ func TestAddSensorInvalidTokenHeaderFormat(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Invalid Authorization Header")
 }
 
-// get sensors followed by the user
+// get sensors subscribed by the user
 func TestGetSensors(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
@@ -188,7 +188,7 @@ func TestGetSensors(t *testing.T) {
 
 	token := SetupUser(t, db, r)
 
-	// add a sensor to the user
+	// subscribe the sensor
 	sensor := models.UserSensor{
 		Username: username,
 		SensorID: sensorID,
@@ -201,7 +201,7 @@ func TestGetSensors(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	// get the sensors
+	// get the subscribed sensors
 	req, _ = http.NewRequest("GET", "/user/sensors", nil)
 	req.Header.Set("Authorization", "Bearer " + token)
 
@@ -212,7 +212,7 @@ func TestGetSensors(t *testing.T) {
 	assert.Contains(t, w.Body.String(), sensorID)
 }
 
-// get sensors as an unauthorized user
+// get subscribed sensors as an unauthorized user
 func TestGetSensorsUnauthorized(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
@@ -229,7 +229,7 @@ func TestGetSensorsUnauthorized(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Missing Authorization Header")
 }
 
-// get sensors without any sensors
+// get subscribed sensors without any subscriptions
 func TestGetSensorsNoSensors(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
@@ -251,7 +251,7 @@ func TestGetSensorsNoSensors(t *testing.T) {
 	assert.Equal(t, w.Body.String(), "null")
 }
 
-// get sensors with an invalid token
+// get subscribed sensors with an invalid token
 func TestGetSensorsInvalidToken(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
@@ -269,7 +269,7 @@ func TestGetSensorsInvalidToken(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Invalid token")
 }
 
-// get sensors with an invalid token header format
+// get subscribed sensors with an invalid token header format
 func TestGetSensorsInvalidTokenHeaderFormat(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
@@ -289,8 +289,8 @@ func TestGetSensorsInvalidTokenHeaderFormat(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Invalid Authorization Header")
 }
 
-// remove a sensor from the user's list
-func TestRemoveSensor(t *testing.T) {
+// unsubscribe the sensor from the user's list
+func TestUnsubscribeSensor(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
@@ -298,7 +298,7 @@ func TestRemoveSensor(t *testing.T) {
 
 	token := SetupUser(t, db, r)
 
-	// add a sensor to the user
+	// subscribe the sensor
 	sensor := models.UserSensor{
 		Username: username,
 		SensorID: sensorID,
@@ -311,7 +311,7 @@ func TestRemoveSensor(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	// remove the sensor
+	// unsubscribe the sensor
 	req, _ = http.NewRequest("DELETE", "/user/sensors/" + sensorID, bytes.NewBuffer(payload))
 	req.Header.Set("Authorization", "Bearer " + token)
 
@@ -332,14 +332,14 @@ func TestRemoveSensor(t *testing.T) {
 	assert.Equal(t, w.Body.String(), "null")
 }
 
-// remove a sensor with an invalid token
-func TestRemoveSensorInvalidToken(t *testing.T) {
+// unsubscribe the sensor with an invalid token
+func TestUnsubscribeSensorInvalidToken(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
 	r := SetupRouter(db)
 
-	// remove the sensor
+	// unsubscribe the sensor
 	req, _ := http.NewRequest("DELETE", "/user/sensors/" + sensorID, nil)
 	req.Header.Set("Authorization", "Bearer invalidtoken")
 
@@ -350,14 +350,14 @@ func TestRemoveSensorInvalidToken(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Invalid token")
 }
 
-// remove a sensor as an unauthorized user
-func TestRemoveSensorUnauthorized(t *testing.T) {
+// unsubscribe the sensor as an unauthorized user
+func TestUnsubscribeSensorUnauthorized(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
 	r := SetupRouter(db)
 
-	// remove the sensor
+	// unsubscribe the sensor
 	req, _ := http.NewRequest("DELETE", "/user/sensors/" + sensorID, nil)
 
 	w := httptest.NewRecorder()
@@ -367,8 +367,8 @@ func TestRemoveSensorUnauthorized(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Missing Authorization Header")
 }
 
-// remove a non-existing sensor
-func TestRemoveSensorNonExistingSensor(t *testing.T) {
+// unsubscribe a not subscribed sensor
+func TestUnsubscribeSensorNotSubscribedSensor(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
@@ -383,7 +383,7 @@ func TestRemoveSensorNonExistingSensor(t *testing.T) {
 	}
 	payload, _ := json.Marshal(sensor)
 
-	// remove the sensor
+	// unsubscribe the sensor
 	req, _ := http.NewRequest("DELETE", "/user/sensors/" + sensorID, bytes.NewBuffer(payload))
 	req.Header.Set("Authorization", "Bearer " + token)
 
@@ -394,8 +394,8 @@ func TestRemoveSensorNonExistingSensor(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Sensor not found")
 }
 
-// remove a sensor with an invalid payload
-func TestRemoveSensorInvalidPayload(t *testing.T) {
+// unsubscribe the sensor with an invalid payload
+func TestUnsubscribeSensorInvalidPayload(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
@@ -403,7 +403,7 @@ func TestRemoveSensorInvalidPayload(t *testing.T) {
 
 	token := SetupUser(t, db, r)
 
-	// send an invalid payload as a sensor
+	// send an invalid payload as the sensor
 	sensor := struct{
 		password string
 	}{
@@ -411,7 +411,7 @@ func TestRemoveSensorInvalidPayload(t *testing.T) {
 	}
 	payload, _ := json.Marshal(sensor)
 
-	// remove the sensor
+	// unsubscribe the sensor
 	req, _ := http.NewRequest("DELETE", "/user/sensors/" + sensorID, bytes.NewBuffer(payload))
 	req.Header.Set("Authorization", "Bearer " + token)
 
@@ -422,8 +422,8 @@ func TestRemoveSensorInvalidPayload(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Invalid input")
 }
 
-// remove a sensor with a missing field
-func TestRemoveSensorMissingField(t *testing.T) {
+// unsubscribe the sensor with a missing field
+func TestUnsubscribeSensorMissingField(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
@@ -437,7 +437,7 @@ func TestRemoveSensorMissingField(t *testing.T) {
 	}
 	payload, _ := json.Marshal(sensor)
 
-	// remove the sensor
+	// unsubscribe the sensor
 	req, _ := http.NewRequest("DELETE", "/user/sensors/" + sensorID, bytes.NewBuffer(payload))
 	req.Header.Set("Authorization", "Bearer " + token)
 
@@ -448,8 +448,8 @@ func TestRemoveSensorMissingField(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Invalid input")
 }
 
-// remove a sensor with an invalid token header format
-func TestRemoveSensorInvalidTokenHeaderFormat(t *testing.T) {
+// unsubscribe the sensor with an invalid token header format
+func TestUnsubscribeSensorInvalidTokenHeaderFormat(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
@@ -464,7 +464,7 @@ func TestRemoveSensorInvalidTokenHeaderFormat(t *testing.T) {
 	}
 	payload, _ := json.Marshal(sensor)
 
-	// remove the sensor
+	// unsubscribe the sensor
 	req, _ := http.NewRequest("DELETE", "/user/sensors/" + sensorID, bytes.NewBuffer(payload))
 	req.Header.Set("Authorization", token) // missing Bearer
 

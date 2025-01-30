@@ -11,8 +11,8 @@ import (
 	"github.com/kajtekajtek/insight-naturae/pkg/models"
 )
 
-// handle adding a sensor for a user to follow
-func AddSensorHandler(db *sql.DB) gin.HandlerFunc {
+// handle sensor subscription requests
+func SubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var userSensor models.UserSensor // user sensor data struct
 
@@ -60,6 +60,7 @@ func AddSensorHandler(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
+// get user subscribed sensors
 func GetSensorsHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		log.Println(c.Request.Header)
@@ -81,7 +82,8 @@ func GetSensorsHandler(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
-func RemoveSensorHandler(db *sql.DB) gin.HandlerFunc {
+// handle sensor unsubscription requests
+func UnsubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var userSensor models.UserSensor // user sensor data struct
 
@@ -120,7 +122,7 @@ func RemoveSensorHandler(db *sql.DB) gin.HandlerFunc {
 			}
 		}
 
-		// remove the user sensor data from the database
+		// remove the user's sensor subscription from the database
 		if err := dbutils.RemoveUserSensor(db, userSensor); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to remove sensor"})
