@@ -31,7 +31,7 @@ func SubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 		}
 
 		// get user sensors
-		if sensors, err := dbutils.GetSensorSubscriptions(db, sensorSubscription.Username); 
+		if sensors, err := dbutils.GetUserSubscriptions(db, sensorSubscription.Username); 
 			err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to get user sensors"})
@@ -71,7 +71,7 @@ func GetSensorsHandler(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		sensors, err := dbutils.GetSensorSubscriptions(db, username)
+		sensors, err := dbutils.GetUserSubscriptions(db, username)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to get user sensors"})
@@ -102,7 +102,7 @@ func UnsubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 		}
 
 		// check if the sensor exists on the user's list
-		if sensors, err := dbutils.GetSensorSubscriptions(db, sensorSubscription.Username);
+		if sensors, err := dbutils.GetUserSubscriptions(db, sensorSubscription.Username);
 			err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to get user sensors"})

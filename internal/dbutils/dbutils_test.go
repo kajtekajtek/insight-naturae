@@ -141,7 +141,7 @@ func TestGetUsersByUsername(t *testing.T) {
 	assert.Equal(t, user.Password, userData[0].Password)
 }
 
-func TestGetSensorSubscriptions(t *testing.T) {
+func TestGetUserSubscriptions(t *testing.T) {
 	db := setupTestDB(t)
 	defer tearDownTestDB(db)
 
@@ -153,7 +153,7 @@ func TestGetSensorSubscriptions(t *testing.T) {
 	err := InsertSensorSubscriptionData(db, sensorSubscription)
 	assert.NoError(t, err)
 
-	sensorSubscriptions, err := GetSensorSubscriptions(db, "testuser")
+	sensorSubscriptions, err := GetUserSubscriptions(db, "testuser")
 	assert.NoError(t, err)
 	assert.Len(t, sensorSubscriptions, 1)
 	assert.Equal(t, sensorSubscription.Username, sensorSubscriptions[0].Username)
@@ -176,7 +176,7 @@ func TestRemoveSensorSubscription(t *testing.T) {
 	err = RemoveSensorSubscription(db, sensorSubscription)
 	assert.NoError(t, err)
 
-	sensorSubscriptions, err := GetSensorSubscriptions(db, "testuser")
+	sensorSubscriptions, err := GetUserSubscriptions(db, "testuser")
 	assert.NoError(t, err)
 	assert.Len(t, sensorSubscriptions, 0)
 }

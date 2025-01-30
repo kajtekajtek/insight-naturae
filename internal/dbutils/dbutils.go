@@ -177,7 +177,7 @@ func GetUsersByUsername(db *sql.DB, username string) ([]models.User, error) {
 	return user, nil
 }
 
-func GetSensorSubscriptions(db *sql.DB, username string) ([]models.SensorSubscription, error) {
+func GetUserSubscriptions(db *sql.DB, username string) ([]models.SensorSubscription, error) {
 	querySQL := `
 		SELECT username, sensor_id FROM SensorSubscription WHERE username = ?;`
 	
