@@ -46,7 +46,7 @@ func TearDownTestDB(db *sql.DB) {
 	os.Remove(DBPath)
 }
 
-func SetupRouter(db *sql.DB) *gin.Engine {
+func SetupTestRouter(db *sql.DB) *gin.Engine {
 	r := gin.Default()
 
 	r.POST("/register", RegisterHandler(db))

@@ -18,7 +18,7 @@ func TestSubscribeSensor(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	token := SetupUser(t, db, r)
 
@@ -45,7 +45,7 @@ func TestSubscribeSensorInvalidPayload(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	token := SetupUser(t, db, r)
 
@@ -73,7 +73,7 @@ func TestSubscribeSensorMissingField(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	token := SetupUser(t, db, r)
 
@@ -99,7 +99,7 @@ func TestSubscribeSensorSubscribedSensor(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	token := SetupUser(t, db, r)
 
@@ -133,7 +133,7 @@ func TestSubscribeSensorUnauthorized(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	// create the sensor payload
 	sensor := models.SensorSubscription{
@@ -157,7 +157,7 @@ func TestSubscribeSensorInvalidTokenHeaderFormat(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	token := SetupUser(t, db, r)
 	
@@ -184,7 +184,7 @@ func TestGetSensors(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	token := SetupUser(t, db, r)
 
@@ -217,7 +217,7 @@ func TestGetSensorsUnauthorized(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	// get the sensors
 	req, _ := http.NewRequest("GET", "/user/sensors", nil)
@@ -234,7 +234,7 @@ func TestGetSensorsNoSensors(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	token := SetupUser(t, db, r)
 
@@ -256,7 +256,7 @@ func TestGetSensorsInvalidToken(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	// get the sensors
 	req, _ := http.NewRequest("GET", "/user/sensors", nil)
@@ -274,7 +274,7 @@ func TestGetSensorsInvalidTokenHeaderFormat(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	token := SetupUser(t, db, r)
 
@@ -294,7 +294,7 @@ func TestUnsubscribeSensor(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	token := SetupUser(t, db, r)
 
@@ -337,7 +337,7 @@ func TestUnsubscribeSensorInvalidToken(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	// unsubscribe the sensor
 	req, _ := http.NewRequest("DELETE", "/user/sensors/" + sensorID, nil)
@@ -355,7 +355,7 @@ func TestUnsubscribeSensorUnauthorized(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	// unsubscribe the sensor
 	req, _ := http.NewRequest("DELETE", "/user/sensors/" + sensorID, nil)
@@ -372,7 +372,7 @@ func TestUnsubscribeSensorNotSubscribedSensor(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	token := SetupUser(t, db, r)
 
@@ -399,7 +399,7 @@ func TestUnsubscribeSensorInvalidPayload(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	token := SetupUser(t, db, r)
 
@@ -427,7 +427,7 @@ func TestUnsubscribeSensorMissingField(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	token := SetupUser(t, db, r)
 
@@ -453,7 +453,7 @@ func TestUnsubscribeSensorInvalidTokenHeaderFormat(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 	
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	token := SetupUser(t, db, r)
 
