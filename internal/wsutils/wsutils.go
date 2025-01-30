@@ -11,6 +11,7 @@ import (
 	"database/sql"
 
 	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
+	"github.com/kajtekajtek/insight-naturae/internal/jwtutils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -190,13 +191,21 @@ func PingPong(connected chan bool, cm *WSClientManager, username string) {
 }
 
 // handle wsutils connections
-func (cm *WSClientManager) WebSocketHandler(db *sql.DB) gin.HandlerFunc {
+func (cm *WSClientManager) WebSocketHandler(db *sql.DB, secret []byte) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// get the username from the header
-		username := c.GetHeader("username")
-		if username == "" {
+		// get the JWT token from the URL query	
+		token := c.Query("token")
+		if token == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "No username provided"})
+				"error": "Token required"})
+			return
+		}
+
+		// validate the token and get the username
+		username, err := jwtutils.ValidateJWT(secret, token)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "Invalid token"})
 			return
 		}
 

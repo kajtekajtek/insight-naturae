@@ -51,13 +51,13 @@ func main() {
 	// public routes
 	router.POST("/register", api.RegisterHandler(db))
 	router.POST("/login", api.LoginHandler(db, conf.JWTSecret))
+	router.GET("/ws", clientManager.WebSocketHandler(db, conf.JWTSecret))
 	// protected routes
 	protected := router.Group("/user", middleware.AuthMiddleware(conf.JWTSecret))
 	{
 		protected.POST("/sensors", api.SubscribeSensorHandler(db))
 		protected.GET("/sensors", api.GetSensorsHandler(db))
 		protected.DELETE("/sensors/:id", api.UnsubscribeSensorHandler(db))
-		protected.GET("/ws", clientManager.WebSocketHandler(db))
 	}
 
 	router.Run(":8080")
