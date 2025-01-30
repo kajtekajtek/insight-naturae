@@ -97,6 +97,20 @@ func (cm *WSClientManager) Unsubscribe(username string, sensorID string) {
 	}
 }
 
+// get sensor's subscribers
+func (cm *WSClientManager) GetSubscribers(sensorID string) []string {
+	cm.Mutex.RLock()
+	defer cm.Mutex.RUnlock()
+
+	subscribers := make([]string, 0)
+	if sensorSubscribers, exists := cm.Subscriptions[sensorID]; exists {
+		for subscriber := range sensorSubscribers {
+			subscribers = append(subscribers, subscriber)
+		}
+	}
+	return subscribers
+}
+
 // broadcast a message to all clients
 func (cm *WSClientManager) Broadcast(message []byte) error {
 	// lock the clients map mutex

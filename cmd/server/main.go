@@ -34,17 +34,17 @@ func main() {
 		log.Fatalf("Failed while initializing MQTT client: %v", err)
 	}
 
+	// create the WebSocket client manager
+	clientManager := ws.NewWSClientManager()
+
 	// subscribe to the topics
-	messageHandler := mqttutils.MessageHandler(db)
+	messageHandler := mqttutils.MessageHandler(db, clientManager)
 	for _, t := range conf.Topics {
 		log.Printf("Subscribing to topic: %s\n", t)
 		if token := mqttClient.Subscribe(t, 0, messageHandler); token.Wait() && token.Error() != nil {
 			log.Fatalf("Failed while subscribing to topic: %v", token.Error())
 		}
 	}
-
-	// create the WebSocket client manager
-	clientManager := ws.NewWSClientManager()
 
 	// run the API server
 	router := gin.Default()
