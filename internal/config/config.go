@@ -56,7 +56,7 @@ func LoadConfig() (Config, error) {
 	}
 
 	// CORS allowed origins
-	origins := utils.Getenv("CORS_ORIGINS", "http://localhost:5000")
+	origins := utils.Getenv("CORS_ORIGINS", "*")
 	c.CORSOrigins = strings.Split(origins, ",")
 
 	return c, nil
