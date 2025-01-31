@@ -23,11 +23,10 @@ func TestSubscribeSensor(t *testing.T) {
 	token := SetupUser(t, db, r)
 
 	// create the sensor payload
-	sensor := models.SensorSubscription{
-		Username: username,
+	requestBody := subscribeSensorRequestBody{
 		SensorID: sensorID,
 	}
-	payload, _ := json.Marshal(sensor)
+	payload, _ := json.Marshal(requestBody)
 
 	// add sensor to the user
 	req, _ := http.NewRequest("POST", "/user/sensors", bytes.NewBuffer(payload))
@@ -78,9 +77,7 @@ func TestSubscribeSensorMissingField(t *testing.T) {
 	token := SetupUser(t, db, r)
 
 	// send a payload with a missing field
-	sensor := models.SensorSubscription{
-		Username: username,
-	}
+	sensor := struct{}{}
 	payload, _ := json.Marshal(sensor)
 
 	// add sensor to the user
@@ -104,8 +101,7 @@ func TestSubscribeSensorSubscribedSensor(t *testing.T) {
 	token := SetupUser(t, db, r)
 
 	// create the sensor payload
-	sensor := models.SensorSubscription{
-		Username: username,
+	sensor := subscribeSensorRequestBody{
 		SensorID: sensorID,
 	}
 	payload, _ := json.Marshal(sensor)
@@ -136,8 +132,7 @@ func TestSubscribeSensorUnauthorized(t *testing.T) {
 	r := SetupTestRouter(db)
 
 	// create the sensor payload
-	sensor := models.SensorSubscription{
-		Username: username,
+	sensor := subscribeSensorRequestBody{
 		SensorID: sensorID,
 	}
 	payload, _ := json.Marshal(sensor)
@@ -162,8 +157,7 @@ func TestSubscribeSensorInvalidTokenHeaderFormat(t *testing.T) {
 	token := SetupUser(t, db, r)
 	
 	// create the sensor payload
-	sensor := models.SensorSubscription{
-		Username: username,
+	sensor := subscribeSensorRequestBody{
 		SensorID: sensorID,
 	}
 	payload, _ := json.Marshal(sensor)
@@ -189,8 +183,7 @@ func TestGetSensors(t *testing.T) {
 	token := SetupUser(t, db, r)
 
 	// subscribe the sensor
-	sensor := models.SensorSubscription{
-		Username: username,
+	sensor := subscribeSensorRequestBody{
 		SensorID: sensorID,
 	}
 	payload, _ := json.Marshal(sensor)
@@ -299,8 +292,7 @@ func TestUnsubscribeSensor(t *testing.T) {
 	token := SetupUser(t, db, r)
 
 	// subscribe the sensor
-	sensor := models.SensorSubscription{
-		Username: username,
+	sensor := subscribeSensorRequestBody{
 		SensorID: sensorID,
 	}
 	payload, _ := json.Marshal(sensor)
@@ -377,8 +369,7 @@ func TestUnsubscribeSensorNotSubscribedSensor(t *testing.T) {
 	token := SetupUser(t, db, r)
 
 	// create the sensor payload
-	sensor := models.SensorSubscription{
-		Username: username,
+	sensor := subscribeSensorRequestBody{
 		SensorID: sensorID,
 	}
 	payload, _ := json.Marshal(sensor)
@@ -458,8 +449,7 @@ func TestUnsubscribeSensorInvalidTokenHeaderFormat(t *testing.T) {
 	token := SetupUser(t, db, r)
 
 	// create the sensor payload
-	sensor := models.SensorSubscription{
-		Username: username,
+	sensor := subscribeSensorRequestBody{
 		SensorID: sensorID,
 	}
 	payload, _ := json.Marshal(sensor)
