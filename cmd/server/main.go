@@ -66,7 +66,7 @@ func main() {
 	// protected routes
 	protected := router.Group("/user", middleware.AuthMiddleware(conf.JWTSecret))
 	{
-		protected.POST("/sensors", api.SubscribeSensorHandler(db))
+		protected.POST("/sensors", api.SubscribeSensorHandler(db, clientManager))
 		protected.GET("/sensors", api.GetSensorsHandler(db))
 		protected.DELETE("/sensors/:id", api.UnsubscribeSensorHandler(db))
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
 	"github.com/kajtekajtek/insight-naturae/pkg/models"
+	"github.com/kajtekajtek/insight-naturae/internal/wsutils"
 )
 
 /* Request body should contain only the sensor ID as the username is
@@ -17,7 +18,7 @@ type subscribeSensorRequestBody struct {
 }
 
 // handle sensor subscription requests
-func SubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
+func SubscribeSensorHandler(db *sql.DB, cm *wsutils.WSClientManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// sensor subscription data struct
 		var sensorSubscription models.SensorSubscription
@@ -68,6 +69,9 @@ func SubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 				"error": "Failed to subscribe sensor"})
 			return
 		}
+
+		// add subscription to the WebSocket client manager
+		cm.Subscribe(sensorSubscription.Username, sensorSubscription.SensorID)
 
 		// OK
 		c.JSON(http.StatusCreated, gin.H{
@@ -149,12 +153,12 @@ func UnsubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 		// remove the user's sensor subscription from the database
 		if err := dbutils.RemoveSensorSubscription(db, sensorSubscription); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Failed to remove sensor"})
+				"error": "Failed to unsubscribe sensor"})
 			return
 		}
 
 		// OK
 		c.JSON(http.StatusOK, gin.H{
-			"message": "Sensor removed successfully"})
+			"message": "Sensor unsubscribed successfully"})
 	}
 }

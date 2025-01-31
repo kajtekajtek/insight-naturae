@@ -17,6 +17,7 @@ import (
 	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
 	"github.com/kajtekajtek/insight-naturae/internal/middleware"
 	"github.com/kajtekajtek/insight-naturae/pkg/models"
+	"github.com/kajtekajtek/insight-naturae/internal/wsutils"
 )
 
 const (
@@ -49,12 +50,14 @@ func TearDownTestDB(db *sql.DB) {
 func SetupTestRouter(db *sql.DB) *gin.Engine {
 	r := gin.Default()
 
+	cm := wsutils.NewWSClientManager()
+
 	r.POST("/register", RegisterHandler(db))
 	r.POST("/login", LoginHandler(db, []byte(JWTSecret)))
 
 	protected := r.Group("/user", middleware.AuthMiddleware([]byte(JWTSecret)))
 	{
-		protected.POST("/sensors", SubscribeSensorHandler(db))
+		protected.POST("/sensors", SubscribeSensorHandler(db, cm))
 		protected.GET("/sensors", GetSensorsHandler(db))
 		protected.DELETE("/sensors/:id", UnsubscribeSensorHandler(db))
 	}
