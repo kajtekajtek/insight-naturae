@@ -56,7 +56,7 @@ func SubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 			for _, sensor := range sensors {
 				if sensor.SensorID == sensorSubscription.SensorID {
 					c.JSON(http.StatusConflict, gin.H{
-						"error": "Sensor already exists"})
+						"error": "Sensor already subscribed"})
 					return
 				}
 			}
@@ -65,13 +65,13 @@ func SubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 		// insert the user sensor data into the database
 		if err := dbutils.InsertSensorSubscriptionData(db, sensorSubscription); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Failed to add sensor"})
+				"error": "Failed to subscribe sensor"})
 			return
 		}
 
 		// OK
 		c.JSON(http.StatusCreated, gin.H{
-			"message": "Sensor added successfully"})
+			"message": "Sensor subscribed successfully"})
 	}
 }
 
