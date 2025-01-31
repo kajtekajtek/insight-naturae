@@ -8,9 +8,10 @@ import (
 	"testing"
 	"strconv"
 	"database/sql"
+	"os"
 
-	"github.com/kajtekajtek/insight-naturae/internal/api"
 	"github.com/kajtekajtek/insight-naturae/internal/jwtutils"
+	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/gin-gonic/gin"
@@ -20,7 +21,27 @@ import (
 const (
 	username = "testuser"
 	JWTSecret = "testjwtsecretkey"
+	DBPath = "test.db"
 )
+
+func SetupTestDB(t *testing.T) *sql.DB {
+	// delete the test database if it exists
+	if _, err := os.Stat(DBPath); err == nil {
+		err := os.Remove(DBPath)
+		assert.NoError(t, err)
+	}
+
+	// create the test database
+	db, err := dbutils.CreateDatabase(DBPath)
+	assert.NoError(t, err)
+	assert.NotNil(t, db)
+	return db
+}
+
+func TearDownTestDB(db *sql.DB) {
+	db.Close()
+	os.Remove(DBPath)
+}
 
 func SetupWSServer(cm *WSClientManager, db *sql.DB) *httptest.Server {
 	r := gin.Default()
@@ -81,8 +102,8 @@ func TestUnsubscribe(t *testing.T) {
 		to the manager and removed after the connection was closed */
 func TestWebSocketHandler(t *testing.T) {
 	// setup the test database
-	db := api.SetupTestDB(t)
-	defer api.TearDownTestDB(db)	
+	db := SetupTestDB(t)
+	defer TearDownTestDB(db)	
 
 	// create a new WSClientManager
 	cm := NewWSClientManager()
@@ -122,8 +143,8 @@ func TestWebSocketHandler(t *testing.T) {
 // test the WebSocket connection handler when no token is provided
 func TestWebSocketHandlerNoToken(t *testing.T) {
 	// setup the test database
-	db := api.SetupTestDB(t)
-	defer api.TearDownTestDB(db)	
+	db := SetupTestDB(t)
+	defer TearDownTestDB(db)	
 
 	// create a new WSClientManager
 	cm := NewWSClientManager()
@@ -150,8 +171,8 @@ func TestWebSocketHandlerNoToken(t *testing.T) {
 		each client received the message */
 func TestBroadcast(t *testing.T) {
 	// setup the test database
-	db := api.SetupTestDB(t)
-	defer api.TearDownTestDB(db)	
+	db := SetupTestDB(t)
+	defer TearDownTestDB(db)	
 
 	// create a new WSClientManager
 	cm := NewWSClientManager()
@@ -200,8 +221,8 @@ func TestBroadcast(t *testing.T) {
 // test sending a message to a specific client
 func TestSendMessage(t *testing.T) {
 	// setup the test database	
-	db := api.SetupTestDB(t)
-	defer api.TearDownTestDB(db)
+	db := SetupTestDB(t)
+	defer TearDownTestDB(db)
 
 	// create a new WSClientManager
 	cm := NewWSClientManager()
@@ -246,8 +267,8 @@ func TestSendMessageNoClient(t *testing.T) {
 
 func TestSendMessageClosedConnection(t *testing.T) {
 	// setup the test database
-	db := api.SetupTestDB(t)
-	defer api.TearDownTestDB(db)	
+	db := SetupTestDB(t)
+	defer TearDownTestDB(db)	
 
 	// create a new WSClientManager
 	cm := NewWSClientManager()
