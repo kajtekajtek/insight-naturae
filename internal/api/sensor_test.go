@@ -36,7 +36,7 @@ func TestSubscribeSensor(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusCreated, w.Code)
-	assert.Contains(t, w.Body.String(), "Sensor added successfully")
+	assert.Contains(t, w.Body.String(), "Sensor subscribed successfully")
 }
 
 // sensor subscription with an invalid payload
@@ -121,7 +121,7 @@ func TestSubscribeSensorSubscribedSensor(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusConflict, w.Code)
-	assert.Contains(t, w.Body.String(), "Sensor already exists")
+	assert.Contains(t, w.Body.String(), "Sensor already subscribed")
 }
 
 // subscribe the sensor as an unauthorized user
@@ -311,7 +311,7 @@ func TestUnsubscribeSensor(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), "Sensor removed successfully")
+	assert.Contains(t, w.Body.String(), "Sensor unsubscribed successfully")
 
 	// get the sensors
 	req, _ = http.NewRequest("GET", "/user/sensors", nil)
