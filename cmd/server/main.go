@@ -68,7 +68,7 @@ func main() {
 	{
 		protected.POST("/sensors", api.SubscribeSensorHandler(db, clientManager))
 		protected.GET("/sensors", api.GetSensorsHandler(db))
-		protected.GET("/sensors/:sensor_id", api.GetSensorDataHandler(db))
+		protected.GET("/sensors/:id", api.GetSensorDataHandler(db))
 		protected.DELETE("/sensors", api.UnsubscribeSensorHandler(db))
 	}
 

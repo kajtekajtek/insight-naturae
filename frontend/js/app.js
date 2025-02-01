@@ -37,6 +37,8 @@ async function login() {
 
         initDashboard();
 
+        await getUserSensors();
+
         alert("Successfully logged in.");
     } else {
         alert(data.error);
@@ -108,8 +110,6 @@ function connectWebSocket() {
         // parse the sensor data
         const sensorData = JSON.parse(event.data);
 
-        console.log('Received sensor data:', sensorData);
-
         updateChart(sensorData);
     };
 
@@ -119,7 +119,7 @@ function connectWebSocket() {
     };
 }
 
-function createChart(sensorID) {
+async function createChart(sensorID) {
     if (charts[sensorID]) {
         return;
     }
@@ -157,10 +157,7 @@ function updateChart(sensorData) {
     const sensorID = sensorData.sensor_id;
     const timestamp = new Date(sensorData.timestamp).toLocaleTimeString();
 
-    console.log("Updating chart: ", sensorData)
-
     if (!charts[sensorID]) {
-        console.log('Creating chart for sensor:', sensorID)
         createChart(sensorID);
     }
 
@@ -174,7 +171,6 @@ function updateChart(sensorData) {
     }
 
     chart.update();
-    console.log('Chart updated');
 }
 
 function initDashboard() {
@@ -186,6 +182,22 @@ function initDashboard() {
 
 function getRandomColor() {
     return `hsl(${Math.random() * 360}, 100%, 50%)`;
+}
+
+async function getUserSensors() {
+    const response = await fetch(`${API_URL}/user/sensors`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    const data = await response.json();
+}
+
+async function getSensorData(sensorID) {
+    const response = await fetch(`${API_URL}/user/sensors/${sensorID}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    const data = await response.json();
 }
 
 window.onload = checkLoginStatus;

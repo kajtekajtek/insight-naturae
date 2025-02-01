@@ -4,7 +4,6 @@ package api
 import (
 	"database/sql"
 	"net/http"
-	"log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
@@ -124,8 +123,6 @@ func GetSensorDataHandler(db *sql.DB) gin.HandlerFunc {
 				"error": "Failed to get sensor"})
 			return
 		}
-
-		log.Printf("TestGetSensorData %v", sensorData)		
 
 		if len(sensorData) == 0 {
 			c.JSON(http.StatusNotFound, gin.H{
