@@ -4,6 +4,7 @@ package api
 import (
 	"database/sql"
 	"net/http"
+	"log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
@@ -97,6 +98,42 @@ func GetSensorsHandler(db *sql.DB) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, sensors)
+	}
+}
+
+// get sensor data
+func GetSensorDataHandler(db *sql.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		username := c.GetHeader("Username")
+		if username == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "Unauthorized"})
+			return
+		}
+
+		sensorID := c.Param("id")
+		if sensorID == "" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid input"})
+			return
+		}
+
+		sensorData, err := dbutils.GetSensorData(db, sensorID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to get sensor"})
+			return
+		}
+
+		log.Printf("TestGetSensorData %v", sensorData)		
+
+		if len(sensorData) == 0 {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "No data found"})
+			return
+		} else {
+			c.JSON(http.StatusOK, sensorData)
+		}
 	}
 }
 

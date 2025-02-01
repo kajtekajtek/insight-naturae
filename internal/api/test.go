@@ -59,7 +59,8 @@ func SetupTestRouter(db *sql.DB) *gin.Engine {
 	{
 		protected.POST("/sensors", SubscribeSensorHandler(db, cm))
 		protected.GET("/sensors", GetSensorsHandler(db))
-		protected.DELETE("/sensors/:id", UnsubscribeSensorHandler(db))
+		protected.GET("/sensors/:id", GetSensorDataHandler(db))
+		protected.DELETE("/sensors", UnsubscribeSensorHandler(db))
 	}
 
 	return r
