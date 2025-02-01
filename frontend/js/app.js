@@ -33,14 +33,33 @@ async function login() {
     if (data.token) {
         token = data.token;
 
-        document.getElementById("auth-container").style.display = "none";
-        document.getElementById("dashboard-container").style.display = "block";
+        localStorage.setItem('token', token);
 
-        connectWebSocket();
+        initDashboard();
 
         alert("Successfully logged in.");
     } else {
         alert(data.error);
+    }
+}
+
+function logout() {
+    localStorage.removeItem('token');
+
+    token = null;
+
+    ws?.close();
+
+    document.getElementById("auth-container").style.display = "block";
+    document.getElementById("dashboard-container").style.display = "none";
+
+    alert("Successfully logged out.");
+}
+
+function checkLoginStatus() {
+    token = localStorage.getItem('token');
+    if (token) {
+        initDashboard();
     }
 }
 
@@ -158,6 +177,15 @@ function updateChart(sensorData) {
     console.log('Chart updated');
 }
 
+function initDashboard() {
+    document.getElementById("auth-container").style.display = "none";
+    document.getElementById("dashboard-container").style.display = "block";
+
+    connectWebSocket();
+}
+
 function getRandomColor() {
     return `hsl(${Math.random() * 360}, 100%, 50%)`;
 }
+
+window.onload = checkLoginStatus;
