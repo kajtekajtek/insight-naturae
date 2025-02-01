@@ -160,6 +160,35 @@ func TestGetUserSubscriptions(t *testing.T) {
 	assert.Equal(t, sensorSubscription.SensorID, sensorSubscriptions[0].SensorID)
 }
 
+func TestGetSensorData(t *testing.T) {
+	db := setupTestDB(t)
+	defer tearDownTestDB(db)
+
+	data := models.SensorData{
+		SensorID:  "test-sensor",
+		Timestamp: "2021-01-01T00:00:00Z",
+		Value:     42.0,
+		Unit:      "test-unit",
+	}
+
+	err := InsertSensorData(db, data)
+	assert.NoError(t, err)
+
+	sensorData, err := GetSensorData(db, "test-sensor")
+	assert.NoError(t, err)
+	assert.Len(t, sensorData, 1)
+	assert.Equal(t, data, sensorData[0])
+}
+
+func TestGetSensorDataNoData(t *testing.T) {
+	db := setupTestDB(t)
+	defer tearDownTestDB(db)
+
+	sensorData, err := GetSensorData(db, "test-sensor")
+	assert.NoError(t, err)
+	assert.Len(t, sensorData, 0)
+}
+
 // --- DELETE operations ---
 func TestRemoveSensorSubscription(t *testing.T) {
 	db := setupTestDB(t)
