@@ -131,16 +131,22 @@ async function createChart(sensorID) {
     canvas.id = `char-${sensorID}`;
     chartContainer.appendChild(canvas);
 
+    const historicalData = await getSensorData(sensorID);
+    const labels = historicalData.map(r => new Date(r.timestamp)
+        .toLocaleTimeString());
+    const values = historicalData.map(r => r.value);
+
     const ctx = canvas.getContext('2d');
     charts[sensorID] = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: [],
+            labels: labels,
             datasets: [{
                 label: `Sensor ${sensorID}`,
-                data: [],
+                data: values,
                 borderColor: getRandomColor(),
-                borderWidth: 1
+                borderWidth: 2,
+                fill: false
             }]
         },
         options: {
@@ -173,9 +179,17 @@ function updateChart(sensorData) {
     chart.update();
 }
 
-function initDashboard() {
+async function initDashboard() {
     document.getElementById("auth-container").style.display = "none";
     document.getElementById("dashboard-container").style.display = "block";
+
+    await getUserSensors().then(data => {
+        if (Array.isArray(data)) {
+            data.forEach(sensor => {
+                createChart(sensor.sensor_id);
+            });
+        }
+    })
 
     connectWebSocket();
 }
@@ -186,18 +200,22 @@ function getRandomColor() {
 
 async function getUserSensors() {
     const response = await fetch(`${API_URL}/user/sensors`, {
+        method: "GET",
         headers: { 'Authorization': `Bearer ${token}` }
     });
 
     const data = await response.json();
+    return data;
 }
 
 async function getSensorData(sensorID) {
     const response = await fetch(`${API_URL}/user/sensors/${sensorID}`, {
+        method: "GET",
         headers: { 'Authorization': `Bearer ${token}` }
     });
 
     const data = await response.json();
+    return data;
 }
 
 window.onload = checkLoginStatus;
