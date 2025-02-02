@@ -16,7 +16,7 @@ func TestRegisterHandler(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	// create the user payload
 	user := models.User{
@@ -40,7 +40,7 @@ func TestRegisterHandlerExistingUser(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	// create the user payload
 	user := models.User{
@@ -70,7 +70,7 @@ func TestRegisterHandlerFieldMissing(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	// create the user payload
 	user := models.User{
@@ -93,7 +93,7 @@ func TestRegisterHandlerEmptyStrings(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	// create the user payload
 	user := models.User{
@@ -116,7 +116,7 @@ func TestLoginHandler(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	// create the user payload
 	user := models.User{
@@ -145,7 +145,7 @@ func TestLoginHandlerFieldMissing(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	// create the user payload
 	user := models.User{
@@ -168,7 +168,7 @@ func TestLoginHandlerNonExistingUser(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	// create the user payload
 	user := models.User{
@@ -192,7 +192,7 @@ func testLoginHandlerInvalidPassword(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	// create the user payload
 	user := models.User{
@@ -228,7 +228,7 @@ func testLoginHandlerInvalidUsername(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	// create the user payload
 	user := models.User{
@@ -264,7 +264,7 @@ func testLoginHandlerEmptyStrings(t *testing.T) {
 	db := SetupTestDB(t)
 	defer TearDownTestDB(db)
 
-	r := SetupRouter(db)
+	r := SetupTestRouter(db)
 
 	// create the user payload
 	user := models.User{

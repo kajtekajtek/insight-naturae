@@ -5,11 +5,13 @@ package wsutils
 import (
 	"net/http/httptest"
 	"time"
-	"net/http"
 	"testing"
 	"strconv"
+	"database/sql"
+	"os"
 
-	"github.com/kajtekajtek/insight-naturae/internal/api"
+	"github.com/kajtekajtek/insight-naturae/internal/jwtutils"
+	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/gin-gonic/gin"
@@ -18,24 +20,44 @@ import (
 
 const (
 	username = "testuser"
+	JWTSecret = "testjwtsecretkey"
+	DBPath = "test.db"
 )
 
-func SetupWSServer(t *testing.T, cm *WSClientManager) *httptest.Server {
-	db := api.SetupTestDB(t)	
+func SetupTestDB(t *testing.T) *sql.DB {
+	// delete the test database if it exists
+	if _, err := os.Stat(DBPath); err == nil {
+		err := os.Remove(DBPath)
+		assert.NoError(t, err)
+	}
 
+	// create the test database
+	db, err := dbutils.CreateDatabase(DBPath)
+	assert.NoError(t, err)
+	assert.NotNil(t, db)
+	return db
+}
+
+func TearDownTestDB(db *sql.DB) {
+	db.Close()
+	os.Remove(DBPath)
+}
+
+func SetupWSServer(cm *WSClientManager, db *sql.DB) *httptest.Server {
 	r := gin.Default()
 
-	r.GET("/ws", cm.WebSocketHandler(db))
+	r.GET("/ws", cm.WebSocketHandler(db, []byte(JWTSecret)))
 
 	return httptest.NewServer(r)
 }
 
-func SetupWSConnection(t *testing.T, url string, headers http.Header) *websocket.Conn {
-	conn, _, err := websocket.DefaultDialer.Dial(url, headers)
+func SetupWSConnection(url string) (*websocket.Conn, error) {
+	conn, _, err := websocket.DefaultDialer.Dial(url, nil)
+	if err != nil {
+		return nil, err
+	}
 
-	assert.NoError(t, err)
-
-	return conn
+	return conn, nil
 }
 
 func TestNewWSClientManager(t *testing.T) {
@@ -79,23 +101,25 @@ func TestUnsubscribe(t *testing.T) {
 	test server and connect to the server. Check if the client was added
 		to the manager and removed after the connection was closed */
 func TestWebSocketHandler(t *testing.T) {
+	// setup the test database
+	db := SetupTestDB(t)
+	defer TearDownTestDB(db)	
+
 	// create a new WSClientManager
 	cm := NewWSClientManager()
 
 	// create a test server
-	server := SetupWSServer(t, cm)
+	server := SetupWSServer(cm, db)
 	defer server.Close()
 
-	url := "ws" + server.URL[4:] + "/ws"
-
-	/* normally, the user should pass a JSON Web Token in the headers 
-		and username would be extracted from it by the 
-			authentification middleware */
-	headers := http.Header{}
-	headers.Set("username", username)
+	// create a JSON Web Token
+	token, err := jwtutils.GenerateJWT([]byte(JWTSecret), username)
+	assert.Nil(t, err)
 
 	// connect to the server
-	conn := SetupWSConnection(t, url, headers)
+	url := "ws" + server.URL[4:] + "/ws?token=" + token
+	conn, err := SetupWSConnection(url)
+	assert.Nil(t, err)
 	defer conn.Close()
 
 	// check if the client was added to the manager
@@ -116,45 +140,60 @@ func TestWebSocketHandler(t *testing.T) {
 	assert.False(t, exists)
 }
 
-// test the WebSocket connection handler when no username is provided
-func TestWebSocketHandlerNoUsername(t *testing.T) {
-	db := api.SetupTestDB(t)	
+// test the WebSocket connection handler when no token is provided
+func TestWebSocketHandlerNoToken(t *testing.T) {
+	// setup the test database
+	db := SetupTestDB(t)
+	defer TearDownTestDB(db)	
 
-	// only setup the router
-	r := gin.Default()
-	r.GET("/ws", NewWSClientManager().WebSocketHandler(db))
+	// create a new WSClientManager
+	cm := NewWSClientManager()
 
-	// create a request without an username provided
-	req, _ := http.NewRequest("GET", "/ws", nil)
+	// create a test server
+	server := SetupWSServer(cm, db)
+	defer server.Close()
 
-	// send the request
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
+	// connect to the server without a token
+	url := "ws" + server.URL[4:] + "/ws"
+	_, err := SetupWSConnection(url)
+	assert.NotNil(t, err)
 
-	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	assert.Contains(t, w.Body.String(), "No username provided")
+	// check if the client was not added to the manager
+	cm.Mutex.RLock()
+	_, exists := cm.Clients[username]
+	cm.Mutex.RUnlock()
+
+	assert.False(t, exists)
 }
 
 /* test message broadcasting: create a client manager, test server and
 	connect 3 clients to the server. Broadcast a message and check if
 		each client received the message */
 func TestBroadcast(t *testing.T) {
+	// setup the test database
+	db := SetupTestDB(t)
+	defer TearDownTestDB(db)	
+
 	// create a new WSClientManager
 	cm := NewWSClientManager()
 	
 	// crate a test server
-	server := SetupWSServer(t, cm)
+	server := SetupWSServer(cm, db)
 	defer server.Close()
 
-	url := "ws" + server.URL[4:] + "/ws"
+	url := "ws" + server.URL[4:] + "/ws" + "?token="
 
 	// create 3 connections
 	var conns []*websocket.Conn
 	for i := 0; i < 3; i++ {
-		headers := http.Header{}
-		headers.Set("username", username + strconv.Itoa(i)) 
-
-		conn := SetupWSConnection(t, url, headers)
+		// create a JSON Web Token
+		token, err := jwtutils.GenerateJWT([]byte(JWTSecret), 
+			username + strconv.Itoa(i))
+		assert.Nil(t, err)
+		
+		// connect to the server
+		conn, err := SetupWSConnection(url + token)
+		assert.Nil(t, err)
 		conns = append(conns, conn)
 	}
 	defer func() {
@@ -181,22 +220,28 @@ func TestBroadcast(t *testing.T) {
 
 // test sending a message to a specific client
 func TestSendMessage(t *testing.T) {
+	// setup the test database	
+	db := SetupTestDB(t)
+	defer TearDownTestDB(db)
+
 	// create a new WSClientManager
 	cm := NewWSClientManager()
 
 	// create a test server
-	server := SetupWSServer(t, cm)
+	server := SetupWSServer(cm, db)
 	defer server.Close()
 
-	url := "ws" + server.URL[4:] + "/ws"
+	// create a JSON Web Token
+	token, err := jwtutils.GenerateJWT([]byte(JWTSecret), username)
+	assert.Nil(t, err)
 
-	// create a connection
-	headers := http.Header{}
-	headers.Set("username", username)
-
-	conn := SetupWSConnection(t, url, headers)
+	// connect to the server
+	url := "ws" + server.URL[4:] + "/ws" + "?token=" + token
+	conn, err := SetupWSConnection(url)
+	assert.Nil(t, err)
 	defer conn.Close()
 
+	// read the ping message first
 	_, msg, err := conn.ReadMessage()
 	assert.Nil(t, err)
 	assert.Equal(t, "ping", string(msg))	
@@ -221,25 +266,30 @@ func TestSendMessageNoClient(t *testing.T) {
 }
 
 func TestSendMessageClosedConnection(t *testing.T) {
+	// setup the test database
+	db := SetupTestDB(t)
+	defer TearDownTestDB(db)	
+
 	// create a new WSClientManager
 	cm := NewWSClientManager()
 
 	// create a test server
-	server := SetupWSServer(t, cm)
+	server := SetupWSServer(cm, db)
 	defer server.Close()
 
-	url := "ws" + server.URL[4:] + "/ws"
+	// create a JSON Web Token
+	token, err := jwtutils.GenerateJWT([]byte(JWTSecret), username)
+	assert.Nil(t, err)
 
-	// create a connection
-	headers := http.Header{}
-	headers.Set("username", username)
-
-	conn := SetupWSConnection(t, url, headers)
+	// connect to the server
+	url := "ws" + server.URL[4:] + "/ws" + "?token=" + token
+	conn, err := SetupWSConnection(url)
+	assert.Nil(t, err)
 	conn.Close()
 
 	// send a message
 	cm.SendMessage(username, []byte("Hello, World!"))
 
-	_, _, err := conn.ReadMessage()
+	_, _, err = conn.ReadMessage()
 	assert.NotNil(t, err)
 }

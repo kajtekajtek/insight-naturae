@@ -13,6 +13,7 @@ import (
 	ws "github.com/kajtekajtek/insight-naturae/internal/wsutils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/cors"
 )
 
 func main() {
@@ -35,10 +36,10 @@ func main() {
 	}
 
 	// create the WebSocket client manager
-	clientManager := ws.NewWSClientManager()
+	cm := ws.NewWSClientManager()
 
 	// subscribe to the topics
-	messageHandler := mqttutils.MessageHandler(db, clientManager)
+	messageHandler := mqttutils.MessageHandler(db, cm)
 	for _, t := range conf.Topics {
 		log.Printf("Subscribing to topic: %s\n", t)
 		if token := mqttClient.Subscribe(t, 0, messageHandler); token.Wait() && token.Error() != nil {
@@ -46,18 +47,29 @@ func main() {
 		}
 	}
 
-	// run the API server
+	// set up the server
 	router := gin.Default()
+
+	// CORS
+	router.Use(cors.New(cors.Config{
+		AllowOrigins: conf.CORSOrigins,
+		AllowMethods: []string{"GET", "POST", "DELETE", "OPTIONS"},
+		AllowHeaders: []string{"Authorization", "Content-Type"},
+		AllowCredentials: true,
+	}))
+
 	// public routes
 	router.POST("/register", api.RegisterHandler(db))
 	router.POST("/login", api.LoginHandler(db, conf.JWTSecret))
+	router.GET("/ws", cm.WebSocketHandler(db, conf.JWTSecret))
+
 	// protected routes
 	protected := router.Group("/user", middleware.AuthMiddleware(conf.JWTSecret))
 	{
-		protected.POST("/sensors", api.SubscribeSensorHandler(db))
+		protected.POST("/sensors/:id", api.SubscribeSensorHandler(db, cm))
+		protected.DELETE("/sensors/:id", api.UnsubscribeSensorHandler(db, cm))
 		protected.GET("/sensors", api.GetSensorsHandler(db))
-		protected.DELETE("/sensors/:id", api.UnsubscribeSensorHandler(db))
-		protected.GET("/ws", clientManager.WebSocketHandler(db))
+		protected.GET("/sensors/:id/data", api.GetSensorDataHandler(db))
 	}
 
 	router.Run(":8080")

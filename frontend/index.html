@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>insight-naturae</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>dashboard</h1>
+    <div id="auth-container">
+        <h2>Register</h2>
+        <input id="register-username" type="text" placeholder="Username">
+        <input id="register-password" type="password" placeholder="Password">
+        <button onClick="register()">register</button>
+
+        <h2>Log in</h2>
+        <input id="login-username" type="text" placeholder="Username">
+        <input id="login-password" type="password" placeholder="Password">
+        <button onClick="login()">log in</button>
+    </div>
+
+    <div id="dashboard-container" style="display: none;">
+        <h2>Enter sensor's id to subscribe it</h2>
+        <input id="sensor-id" type="text" placeholder="Sensor ID">
+        <button onClick="subscribeSensor()">subscribe</button>
+
+        <h2>subscribed sensors</h2>
+        <div id="sensor-list"></div>
+
+        <h2>charts</h2>
+        <div id="chart-container"></div>
+
+        <button onClick="logout()">log out</button>
+    </div>
+    <script src="js/app.js"></script>
+</body>
+</html>

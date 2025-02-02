@@ -4,31 +4,40 @@ package api
 import (
 	"database/sql"
 	"net/http"
-	"log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
 	"github.com/kajtekajtek/insight-naturae/pkg/models"
+	"github.com/kajtekajtek/insight-naturae/internal/wsutils"
 )
 
+/* Request body should contain only the sensor ID as the username is
+	taken from the token */
+type subscribeSensorRequestBody struct {
+	SensorID string `json:"sensor_id"`
+}
+
 // handle sensor subscription requests
-func SubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
+func SubscribeSensorHandler(db *sql.DB, cm *wsutils.WSClientManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var sensorSubscription models.SensorSubscription // user sensor data struct
+		// sensor subscription data struct
+		var sensorSubscription models.SensorSubscription
+		
+		// get the username retrieved from the token
+		username := c.GetHeader("Username")
+		// get the sensor ID from the URL
+		sensorID := c.Param("id")
 
-		// bind the JSON data to the user sensor struct
-		if err := c.ShouldBindJSON(&sensorSubscription); err != nil {
+		// check if both fields are provided
+		if username == "" || sensorID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "Invalid input"})
 			return
 		}
 
-		// check if the both fields are provided
-		if sensorSubscription.Username == "" || sensorSubscription.SensorID == "" {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid input"})
-			return
-		}
+		// set the sensor subscription data
+		sensorSubscription.Username = username
+		sensorSubscription.SensorID = sensorID
 
 		// get user sensors
 		if sensors, err := dbutils.GetUserSubscriptions(db, sensorSubscription.Username); 
@@ -41,7 +50,7 @@ func SubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 			for _, sensor := range sensors {
 				if sensor.SensorID == sensorSubscription.SensorID {
 					c.JSON(http.StatusConflict, gin.H{
-						"error": "Sensor already exists"})
+						"error": "Sensor already subscribed"})
 					return
 				}
 			}
@@ -50,20 +59,22 @@ func SubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 		// insert the user sensor data into the database
 		if err := dbutils.InsertSensorSubscriptionData(db, sensorSubscription); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Failed to add sensor"})
+				"error": "Failed to subscribe sensor"})
 			return
 		}
 
+		// add subscription to the WebSocket client manager
+		cm.Subscribe(sensorSubscription.Username, sensorSubscription.SensorID)
+
 		// OK
 		c.JSON(http.StatusCreated, gin.H{
-			"message": "Sensor added successfully"})
+			"message": "Sensor subscribed successfully"})
 	}
 }
 
 // get user subscribed sensors
 func GetSensorsHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		log.Println(c.Request.Header)
 		username := c.GetHeader("Username")
 		if username == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
@@ -82,24 +93,61 @@ func GetSensorsHandler(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
-// handle sensor unsubscription requests
-func UnsubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
+// get sensor data
+func GetSensorDataHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var sensorSubscription models.SensorSubscription // user sensor data struct
+		username := c.GetHeader("Username")
+		if username == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "Unauthorized"})
+			return
+		}
 
-		// bind the JSON data to the user sensor struct
-		if err := c.ShouldBindJSON(&sensorSubscription); err != nil {
+		sensorID := c.Param("id")
+		if sensorID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "Invalid input"})
 			return
 		}
 
-		// check if the both fields are provided
-		if sensorSubscription.Username == "" || sensorSubscription.SensorID == "" {
+		sensorData, err := dbutils.GetSensorData(db, sensorID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to get sensor"})
+			return
+		}
+
+		if len(sensorData) == 0 {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "No data found"})
+			return
+		} else {
+			c.JSON(http.StatusOK, sensorData)
+		}
+	}
+}
+
+// handle sensor unsubscription requests
+func UnsubscribeSensorHandler(db *sql.DB, cm *wsutils.WSClientManager) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// sensor subscription data struct
+		var sensorSubscription models.SensorSubscription
+
+		// get the username retrieved from the token
+		username := c.GetHeader("Username")
+		// get the sensor id from the url
+		sensorID := c.Param("id")
+
+		// check if both fields are provided
+		if username == "" || sensorID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "Invalid input"})
 			return
 		}
+
+		// set the sensor subscription data
+		sensorSubscription.Username = username
+		sensorSubscription.SensorID = sensorID
 
 		// check if the sensor exists on the user's list
 		if sensors, err := dbutils.GetUserSubscriptions(db, sensorSubscription.Username);
@@ -125,12 +173,15 @@ func UnsubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 		// remove the user's sensor subscription from the database
 		if err := dbutils.RemoveSensorSubscription(db, sensorSubscription); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Failed to remove sensor"})
+				"error": "Failed to unsubscribe sensor"})
 			return
 		}
 
+		// remove the subscription from the WebSocket client manager
+		cm.Unsubscribe(sensorSubscription.Username, sensorSubscription.SensorID)
+
 		// OK
 		c.JSON(http.StatusOK, gin.H{
-			"message": "Sensor removed successfully"})
+			"message": "Sensor unsubscribed successfully"})
 	}
 }

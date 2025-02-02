@@ -201,6 +201,32 @@ func GetUserSubscriptions(db *sql.DB, username string) ([]models.SensorSubscript
 	return sensorSubscription, nil
 }
 
+// get sensor data by sensor_id
+func GetSensorData(db *sql.DB, sensorID string) ([]models.SensorData, error) {
+	querySQL := `
+		SELECT sensor_id, timestamp, value, unit FROM SensorData WHERE sensor_id = ?;`
+	
+	rows, err := db.Query(querySQL, sensorID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query sensor data: %v", err)
+	}
+	defer rows.Close()
+
+	// iterate over the query results
+	var data []models.SensorData
+	for rows.Next() {
+		var sd models.SensorData
+		err := rows.Scan(&sd.SensorID, &sd.Timestamp, &sd.Value, &sd.Unit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan sensor data: %v", err)
+		}
+		data = append(data, sd)
+	}
+
+	return data, nil
+}
+
+
 // --- DELETE data ---
 func RemoveSensorSubscription(db *sql.DB, sensorSubscription models.SensorSubscription) error {
 	deleteSQL := `
