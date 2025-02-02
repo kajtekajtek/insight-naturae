@@ -36,10 +36,10 @@ func main() {
 	}
 
 	// create the WebSocket client manager
-	clientManager := ws.NewWSClientManager()
+	cm := ws.NewWSClientManager()
 
 	// subscribe to the topics
-	messageHandler := mqttutils.MessageHandler(db, clientManager)
+	messageHandler := mqttutils.MessageHandler(db, cm)
 	for _, t := range conf.Topics {
 		log.Printf("Subscribing to topic: %s\n", t)
 		if token := mqttClient.Subscribe(t, 0, messageHandler); token.Wait() && token.Error() != nil {
@@ -61,13 +61,13 @@ func main() {
 	// public routes
 	router.POST("/register", api.RegisterHandler(db))
 	router.POST("/login", api.LoginHandler(db, conf.JWTSecret))
-	router.GET("/ws", clientManager.WebSocketHandler(db, conf.JWTSecret))
+	router.GET("/ws", cm.WebSocketHandler(db, conf.JWTSecret))
 
 	// protected routes
 	protected := router.Group("/user", middleware.AuthMiddleware(conf.JWTSecret))
 	{
-		protected.POST("/sensors/:id", api.SubscribeSensorHandler(db, clientManager))
-		protected.DELETE("/sensors/:id", api.UnsubscribeSensorHandler(db))
+		protected.POST("/sensors/:id", api.SubscribeSensorHandler(db, cm))
+		protected.DELETE("/sensors/:id", api.UnsubscribeSensorHandler(db, cm))
 		protected.GET("/sensors", api.GetSensorsHandler(db))
 		protected.GET("/sensors/:id/data", api.GetSensorDataHandler(db))
 	}

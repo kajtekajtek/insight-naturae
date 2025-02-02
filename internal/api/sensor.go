@@ -128,7 +128,7 @@ func GetSensorDataHandler(db *sql.DB) gin.HandlerFunc {
 }
 
 // handle sensor unsubscription requests
-func UnsubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
+func UnsubscribeSensorHandler(db *sql.DB, cm *wsutils.WSClientManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// sensor subscription data struct
 		var sensorSubscription models.SensorSubscription
@@ -176,6 +176,9 @@ func UnsubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 				"error": "Failed to unsubscribe sensor"})
 			return
 		}
+
+		// remove the subscription from the WebSocket client manager
+		cm.Unsubscribe(sensorSubscription.Username, sensorSubscription.SensorID)
 
 		// OK
 		c.JSON(http.StatusOK, gin.H{
