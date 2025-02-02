@@ -45,6 +45,7 @@ async function login() {
     }
 }
 
+// user logout
 function logout() {
     localStorage.removeItem('token');
 
@@ -58,6 +59,7 @@ function logout() {
     alert("Successfully logged out.");
 }
 
+// check if user is logged in
 function checkLoginStatus() {
     token = localStorage.getItem('token');
     if (token) {
@@ -69,13 +71,12 @@ function checkLoginStatus() {
 async function subscribeSensor() {
     const sensorID = document.getElementById('sensor-id').value;
 
-    const response = await fetch(`${API_URL}/user/sensors`, {
+    const response = await fetch(`${API_URL}/user/sensors/${sensorID}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ sensor_id: sensorID })
     });
 
     const data = await response.json();
@@ -87,6 +88,112 @@ async function subscribeSensor() {
     }
 }
 
+// unsubscribe from a sensor
+async function unsubscribeSensor(sensorID) {
+    const response = await fetch(`${API_URL}/user/sensors/${sensorID}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+    });
+
+    const data = await response.json();
+    if (data.message) {
+        alert(data.message);
+
+        removeChart(sensorID);
+
+        document.getElementById(`sensor-item-${sensorID}`).remove();
+    } else {
+        alert(data.error);
+    }
+}
+
+// create a chart for a sensor
+async function createChart(sensorID) {
+    if (charts[sensorID]) {
+        return;
+    }
+
+    console.log('Creating chart for sensor:', sensorID)
+
+    // create a canvas element for the chart
+    const chartContainer = document.getElementById('chart-container');
+    const canvas = document.createElement('canvas');
+    canvas.id = `chart-${sensorID}`;
+    chartContainer.appendChild(canvas);
+
+    // get historical sensor data
+    const historicalData = await getSensorData(sensorID);
+    const labels = historicalData.map(r => new Date(r.timestamp)
+        .toLocaleTimeString());
+    const values = historicalData.map(r => r.value);
+
+    // create the chart
+    const ctx = canvas.getContext('2d');
+    charts[sensorID] = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: `Sensor ${sensorID}`,
+                data: values,
+                borderColor: getRandomColor(),
+                borderWidth: 2,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            // maintain the aspect ratio
+            scales: {
+                x: { type: 'category', title: { display: true, text: 'Time' } },
+                y: { beginAtZero: false, title: { display: true, text: "Value" } }
+            },
+            // remove points on the line
+            elements: {
+                point: {
+                    radius: 0
+                }
+            }
+        }
+    });
+
+    initDashboard();
+}
+
+// remove chart from the dashboard
+function removeChart(sensorID) {
+    if (charts[sensorID]) {
+        delete charts[sensorID];
+        document.getElementById(`chart-${sensorID}`).remove();
+    }
+}
+
+// update the chart with new sensor data
+function updateChart(sensorData) {
+    const sensorID = sensorData.sensor_id;
+    const timestamp = new Date(sensorData.timestamp).toLocaleTimeString();
+
+    if (!charts[sensorID]) {
+        createChart(sensorID);
+    }
+
+    const chart = charts[sensorID];
+    chart.data.labels.push(timestamp);
+    chart.data.datasets[0].data.push(sensorData.value);
+
+    // shift the labels and data if more than 20
+    if (chart.data.labels.length > 20) {
+        chart.data.labels.shift();
+        chart.data.datasets[0].data.shift();
+    }
+
+    chart.update();
+}
+
+// connect to the WebSocket
 function connectWebSocket() {
     if (!token) {
         console.error('Missing token');
@@ -119,74 +226,44 @@ function connectWebSocket() {
     };
 }
 
-async function createChart(sensorID) {
-    if (charts[sensorID]) {
-        return;
-    }
-
-    console.log('Creating chart for sensor:', sensorID)
-
-    const chartContainer = document.getElementById('chart-container');
-    const canvas = document.createElement('canvas');
-    canvas.id = `char-${sensorID}`;
-    chartContainer.appendChild(canvas);
-
-    const historicalData = await getSensorData(sensorID);
-    const labels = historicalData.map(r => new Date(r.timestamp)
-        .toLocaleTimeString());
-    const values = historicalData.map(r => r.value);
-
-    const ctx = canvas.getContext('2d');
-    charts[sensorID] = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: `Sensor ${sensorID}`,
-                data: values,
-                borderColor: getRandomColor(),
-                borderWidth: 2,
-                fill: false
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                x: { type: 'category', title: { display: true, text: 'Time' } },
-                y: { beginAtZero: false, title: { display: true, text: "Value" } }
-            }
-        }
-    });
-}
-
-function updateChart(sensorData) {
-    const sensorID = sensorData.sensor_id;
-    const timestamp = new Date(sensorData.timestamp).toLocaleTimeString();
-
-    if (!charts[sensorID]) {
-        createChart(sensorID);
-    }
-
-    const chart = charts[sensorID];
-    chart.data.labels.push(timestamp);
-    chart.data.datasets[0].data.push(sensorData.value);
-
-    if (chart.data.labels.length > 20) {
-        chart.data.labels.shift();
-        chart.data.datasets[0].data.shift();
-    }
-
-    chart.update();
-}
-
+// initialize the dashboard
 async function initDashboard() {
     document.getElementById("auth-container").style.display = "none";
     document.getElementById("dashboard-container").style.display = "block";
 
+    // sensor list element to display subscribed sensors
+    const sensorList = document.getElementById('sensor-list');
+    sensorList.innerHTML = "";    
+
+    // get subscribed sensors and create charts
     await getUserSensors().then(data => {
         if (Array.isArray(data)) {
             data.forEach(sensor => {
+                // create a chart for each sensor
                 createChart(sensor.sensor_id);
+
+                // check if the unsubscribe button is already created
+                if (document.getElementById(`sensor-item-${sensor.sensor_id}`)) {
+                    return;
+                }                
+
+                /* add sensor to the subscribed sensors list with 
+                    an unsubscribe button */
+                const sensorItem = document.createElement('div');
+                sensorItem.id = `sensor-item-${sensor.sensor_id}`;
+                sensorItem.innerHTML = `
+                    <span>Sensor ${sensor.sensor_id}</span>
+                    <button class="unsubscribe-btn" data-sensor-id="${sensor.sensor_id}">unsubscribe</button>`;
+
+                sensorList.appendChild(sensorItem);
+            });
+
+            // add event listener to the unsubscribe button
+            document.querySelectorAll('.unsubscribe-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const sensorID = btn.getAttribute('data-sensor-id');
+                    unsubscribeSensor(sensorID);
+                });
             });
         }
     })
@@ -194,10 +271,12 @@ async function initDashboard() {
     connectWebSocket();
 }
 
+// get random color in HSL format
 function getRandomColor() {
     return `hsl(${Math.random() * 360}, 100%, 50%)`;
 }
 
+// get user subscribed sensors
 async function getUserSensors() {
     const response = await fetch(`${API_URL}/user/sensors`, {
         method: "GET",
@@ -208,8 +287,9 @@ async function getUserSensors() {
     return data;
 }
 
+// get historical sensor data
 async function getSensorData(sensorID) {
-    const response = await fetch(`${API_URL}/user/sensors/${sensorID}`, {
+    const response = await fetch(`${API_URL}/user/sensors/${sensorID}/data`, {
         method: "GET",
         headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -218,4 +298,5 @@ async function getSensorData(sensorID) {
     return data;
 }
 
+// check if the user is logged in
 window.onload = checkLoginStatus;

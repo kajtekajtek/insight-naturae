@@ -56,6 +56,9 @@ h2:nth-of-type(2) {
     width: 300px;
     margin-bottom: 20px;
     
+    @media (max-width: 768px){
+        width: 100%;
+    }
 }
 
 /* form */
@@ -90,6 +93,22 @@ button:hover {
     transition-duration: 200ms;
 }
 
+.unsubscribe-btn {
+    width: 140px;
+    background-color: transparent;
+    color: var(--primary-color);
+}
+
+.unsubscribe-btn:hover {
+    background-color: var(--secondary-color);
+    color: var(--button-text-color);
+}
+
+span {
+    color: var(--primary-color);
+    cursor: pointer;
+}
+
 /* dashboard */
 #dashboard-container {
     background: var(--container-color);
@@ -97,7 +116,7 @@ button:hover {
     border-radius: var(--border-radius);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     text-align: center;
-    width: 33%;
+    width: 800px;
     display: none;
 }
 
@@ -110,4 +129,33 @@ button:hover {
 #chart-container canvas {
     width: 100% !important;
     height: 100% !important;
+}
+
+@media (max-width: 768px){
+    #dashboard-container {
+        width: 100%;
+    }
+    #auth-container {
+        width: 100%;
+    }
+
+    .unsubscribe-btn {
+        background-color: var(--primary-color);
+        color: var(--button-text-color);
+        width: 70%;
+        height: 40px;
+    }
+
+    .sensor-list {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* display button under the span */
+    .sensor-list div {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
 }
