@@ -57,10 +57,10 @@ func SetupTestRouter(db *sql.DB) *gin.Engine {
 
 	protected := r.Group("/user", middleware.AuthMiddleware([]byte(JWTSecret)))
 	{
-		protected.POST("/sensors", SubscribeSensorHandler(db, cm))
+		protected.POST("/sensors/:id", SubscribeSensorHandler(db, cm))
 		protected.GET("/sensors", GetSensorsHandler(db))
-		protected.GET("/sensors/:id", GetSensorDataHandler(db))
-		protected.DELETE("/sensors", UnsubscribeSensorHandler(db))
+		protected.GET("/sensors/:id/data", GetSensorDataHandler(db))
+		protected.DELETE("/sensors/:id", UnsubscribeSensorHandler(db))
 	}
 
 	return r

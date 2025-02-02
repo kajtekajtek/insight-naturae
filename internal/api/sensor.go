@@ -22,21 +22,14 @@ func SubscribeSensorHandler(db *sql.DB, cm *wsutils.WSClientManager) gin.Handler
 	return func(c *gin.Context) {
 		// sensor subscription data struct
 		var sensorSubscription models.SensorSubscription
-		// expected request body
-		var requestBody subscribeSensorRequestBody
-
-		// bind the JSON data to the expected request body
-		if err := c.ShouldBindJSON(&requestBody); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid input"})
-			return
-		}
 		
 		// get the username retrieved from the token
 		username := c.GetHeader("Username")
+		// get the sensor ID from the URL
+		sensorID := c.Param("id")
 
 		// check if both fields are provided
-		if username == "" || requestBody.SensorID == "" {
+		if username == "" || sensorID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "Invalid input"})
 			return
@@ -44,7 +37,7 @@ func SubscribeSensorHandler(db *sql.DB, cm *wsutils.WSClientManager) gin.Handler
 
 		// set the sensor subscription data
 		sensorSubscription.Username = username
-		sensorSubscription.SensorID = requestBody.SensorID
+		sensorSubscription.SensorID = sensorID
 
 		// get user sensors
 		if sensors, err := dbutils.GetUserSubscriptions(db, sensorSubscription.Username); 
@@ -139,21 +132,14 @@ func UnsubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// sensor subscription data struct
 		var sensorSubscription models.SensorSubscription
-		// expected request body
-		var requestBody subscribeSensorRequestBody
-
-		// bind the JSON data to the user sensor struct
-		if err := c.ShouldBindJSON(&requestBody); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid input"})
-			return
-		}
 
 		// get the username retrieved from the token
 		username := c.GetHeader("Username")
+		// get the sensor id from the url
+		sensorID := c.Param("id")
 
 		// check if both fields are provided
-		if username == "" || requestBody.SensorID == "" {
+		if username == "" || sensorID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "Invalid input"})
 			return
@@ -161,7 +147,7 @@ func UnsubscribeSensorHandler(db *sql.DB) gin.HandlerFunc {
 
 		// set the sensor subscription data
 		sensorSubscription.Username = username
-		sensorSubscription.SensorID = requestBody.SensorID
+		sensorSubscription.SensorID = sensorID
 
 		// check if the sensor exists on the user's list
 		if sensors, err := dbutils.GetUserSubscriptions(db, sensorSubscription.Username);
