@@ -4,12 +4,12 @@ package main
 import (
 	"log"
 
+	"github.com/kajtekajtek/insight-naturae/pkg/mqtt"
 	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
 	"github.com/kajtekajtek/insight-naturae/internal/mqttutils"
 	"github.com/kajtekajtek/insight-naturae/internal/api"	
 	"github.com/kajtekajtek/insight-naturae/internal/config"
 	"github.com/kajtekajtek/insight-naturae/internal/middleware"
-	"github.com/kajtekajtek/insight-naturae/pkg/mqtt"
 	ws "github.com/kajtekajtek/insight-naturae/internal/wsutils"
 
 	"github.com/gin-gonic/gin"
@@ -72,5 +72,10 @@ func main() {
 		protected.GET("/sensors/:id/data", api.GetSensorDataHandler(db))
 	}
 
-	router.Run(":8080")
+	// start the server with TLS
+	log.Println("Starting the HTTPS server...")
+	err = router.RunTLS(":443", conf.TLSCert, conf.TLSKey)
+	if err != nil {
+		log.Fatalf("Failed while starting the server: %v", err)
+	}
 }

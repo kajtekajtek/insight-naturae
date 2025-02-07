@@ -14,7 +14,7 @@ cleanup() {
 trap cleanup EXIT
 
 # start the mosquitto mqtt broker
-mosquitto &
+mosquitto -d
 sleep 1
 # start the sensor simulator
 go run ./cmd/sensorsim/main.go &

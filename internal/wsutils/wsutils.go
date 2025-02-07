@@ -21,7 +21,7 @@ import (
 	to a web socket connection */
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		return true // allow all connections by default
+		return r.TLS != nil // allow only secure connections
 	},
 }
 
