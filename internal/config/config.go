@@ -18,11 +18,13 @@ type Config struct {
 	DBPath string // path to the SQLite database file
 	JWTSecret []byte // secret key for JWT signing
 	CORSOrigins []string // list of allowed origins for CORS
+	TLSCert string // path to the TLS certificate file
+	TLSKey string // path to the TLS private key file
 }
 
 /* loads the configuration from the .env file if provided, 
 	otherwise uses the default values */
-func LoadConfig() (Config, error) {
+func LoadConfig() (*Config, error) {
 	var c Config
 
 	// load the environment variables from the .env file
@@ -48,7 +50,7 @@ func LoadConfig() (Config, error) {
 		var err error
 		c.JWTSecret, err = utils.GenerateSecretKey(32)
 		if err != nil {
-			return Config{}, err
+			return &Config{}, err
 		}
 	// otherwise, use the provided secret key
 	} else {
@@ -59,5 +61,9 @@ func LoadConfig() (Config, error) {
 	origins := utils.Getenv("CORS_ORIGINS", "*")
 	c.CORSOrigins = strings.Split(origins, ",")
 
-	return c, nil
+	// TLS certificate and key
+	c.TLSCert = utils.Getenv("TLS_CERT_PATH", "certs/server.crt")
+	c.TLSKey = utils.Getenv("TLS_KEY_PATH", "certs/server.key")
+
+	return &c, nil
 }
