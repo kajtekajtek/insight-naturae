@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:8080';
+const API_URL = 'https://localhost:443';
 let token = null;
 let ws = null;
 let charts = {};
