@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"database/sql"
 	"os"
+	"crypto/tls"
 
 	"github.com/kajtekajtek/insight-naturae/internal/jwtutils"
 	"github.com/kajtekajtek/insight-naturae/internal/dbutils"
@@ -48,11 +49,17 @@ func SetupWSServer(cm *WSClientManager, db *sql.DB) *httptest.Server {
 
 	r.GET("/ws", cm.WebSocketHandler(db, []byte(JWTSecret)))
 
-	return httptest.NewServer(r)
+	testServer := httptest.NewUnstartedServer(r)
+	testServer.StartTLS()
+
+	return testServer
 }
 
 func SetupWSConnection(url string) (*websocket.Conn, error) {
-	conn, _, err := websocket.DefaultDialer.Dial(url, nil)
+	tlsConfig := &tls.Config{ InsecureSkipVerify: true }
+	dialer := websocket.Dialer{TLSClientConfig: tlsConfig}
+
+	conn, _, err := dialer.Dial(url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -109,15 +116,18 @@ func TestWebSocketHandler(t *testing.T) {
 	cm := NewWSClientManager()
 
 	// create a test server
+	t.Logf("Creating a test server...")
 	server := SetupWSServer(cm, db)
 	defer server.Close()
+	t.Logf("Server URL: %s", server.URL)
 
 	// create a JSON Web Token
 	token, err := jwtutils.GenerateJWT([]byte(JWTSecret), username)
 	assert.Nil(t, err)
 
 	// connect to the server
-	url := "ws" + server.URL[4:] + "/ws?token=" + token
+	url := "wss" + server.URL[5:] + "/ws?token=" + token
+	t.Logf("Connecting to %s", url)
 	conn, err := SetupWSConnection(url)
 	assert.Nil(t, err)
 	defer conn.Close()
@@ -154,7 +164,7 @@ func TestWebSocketHandlerNoToken(t *testing.T) {
 	defer server.Close()
 
 	// connect to the server without a token
-	url := "ws" + server.URL[4:] + "/ws"
+	url := "wss" + server.URL[5:] + "/ws"
 	_, err := SetupWSConnection(url)
 	assert.NotNil(t, err)
 
@@ -181,7 +191,7 @@ func TestBroadcast(t *testing.T) {
 	server := SetupWSServer(cm, db)
 	defer server.Close()
 
-	url := "ws" + server.URL[4:] + "/ws" + "?token="
+	url := "wss" + server.URL[5:] + "/ws" + "?token="
 
 	// create 3 connections
 	var conns []*websocket.Conn
@@ -192,6 +202,7 @@ func TestBroadcast(t *testing.T) {
 		assert.Nil(t, err)
 		
 		// connect to the server
+		t.Logf("Connecting to %s", url + token)
 		conn, err := SetupWSConnection(url + token)
 		assert.Nil(t, err)
 		conns = append(conns, conn)
@@ -236,7 +247,7 @@ func TestSendMessage(t *testing.T) {
 	assert.Nil(t, err)
 
 	// connect to the server
-	url := "ws" + server.URL[4:] + "/ws" + "?token=" + token
+	url := "wss" + server.URL[5:] + "/ws" + "?token=" + token
 	conn, err := SetupWSConnection(url)
 	assert.Nil(t, err)
 	defer conn.Close()
@@ -282,7 +293,7 @@ func TestSendMessageClosedConnection(t *testing.T) {
 	assert.Nil(t, err)
 
 	// connect to the server
-	url := "ws" + server.URL[4:] + "/ws" + "?token=" + token
+	url := "wss" + server.URL[5:] + "/ws" + "?token=" + token
 	conn, err := SetupWSConnection(url)
 	assert.Nil(t, err)
 	conn.Close()
