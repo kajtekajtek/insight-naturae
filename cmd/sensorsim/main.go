@@ -6,8 +6,8 @@ import (
 	"log"
 
 	"github.com/kajtekajtek/insight-naturae/internal/sensors"
-	"github.com/kajtekajtek/insight-naturae/pkg/mqtt"
 	"github.com/kajtekajtek/insight-naturae/internal/config"
+	"github.com/kajtekajtek/insight-naturae/pkg/mqtt"
 )
 
 func main() {
